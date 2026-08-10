@@ -79,3 +79,11 @@ test("graph script supports draggable SVG nodes", () => {
   assert.match(script, /pointermove/);
   assert.match(script, /tickStudyGraph/);
 });
+
+test("graph renders icon nodes without visible labels", () => {
+  const script = readFileSync(join(rootDir, "scripts.js"), "utf8");
+
+  assert.match(script, /STUDY_GRAPH_ICONS/);
+  assert.match(script, /study-node-icon/);
+  assert.doesNotMatch(script, /appendSvgText/);
+});

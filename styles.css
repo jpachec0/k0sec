@@ -766,55 +766,36 @@ p {
   fill: rgba(118, 87, 255, 0.92);
 }
 
-.study-node-index,
-.study-node-code,
 .study-panel-code {
   color: var(--color-accent);
   font-family: var(--font-mono);
   font-weight: 700;
 }
 
-.study-node-index {
-  fill: rgba(154, 154, 154, 0.88);
-  font-size: 0.64rem;
+.study-node-icon,
+.study-node-logo {
   pointer-events: none;
 }
 
-.study-node-code {
-  fill: var(--color-accent);
-  font-size: 0.76rem;
-  pointer-events: none;
+.study-node-logo {
+  opacity: 0.88;
 }
 
-.study-node-root .study-node-code {
-  font-size: 0.7rem;
+.study-node-icon-part {
+  fill: none;
+  stroke: rgba(245, 245, 245, 0.86);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  vector-effect: non-scaling-stroke;
+  transition: stroke 180ms ease;
 }
 
-.study-node-title {
-  fill: var(--color-text);
-  font-family: var(--font-title);
-  font-size: 0.84rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  pointer-events: none;
-}
-
-.study-node-root .study-node-title {
-  font-size: 0.74rem;
-}
-
-.study-node-subarea .study-node-title {
-  fill: rgba(245, 245, 245, 0.72);
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  font-weight: 500;
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
-.study-node-subarea:hover .study-node-title,
-.study-node-subarea:focus-visible .study-node-title {
-  opacity: 1;
+.study-node-area:hover .study-node-icon-part,
+.study-node-area:focus-visible .study-node-icon-part,
+.study-node-area.is-related .study-node-icon-part,
+.study-node-area.is-selected .study-node-icon-part {
+  stroke: var(--color-text);
 }
 
 .study-graph-panel {
@@ -1318,10 +1299,6 @@ p {
 
   .study-line-subarea {
     opacity: 0.34;
-  }
-
-  .study-node-title {
-    font-size: 0.72rem;
   }
 
   .study-graph-panel {
