@@ -582,11 +582,12 @@ function getStudyGraphPoint(event) {
 }
 
 function createStudyGraphModel(width, height) {
-  const compact = width < 720;
+  const compact = width < 1080;
   const centerX = width / 2;
-  const centerY = compact ? height * 0.45 : height * 0.5;
-  const areaRing = compact ? Math.min(width * 0.36, 158) : Math.min(width * 0.39, height * 0.42);
-  const subareaRing = compact ? 76 : Math.min(width * 0.15, height * 0.2);
+  const centerY = compact ? 72 : height * 0.5;
+  const areaRingX = Math.min(width * 0.32, 580);
+  const areaRingY = Math.min(height * 0.28, 340);
+  const subareaRing = Math.min(width * 0.13, height * 0.15, 155);
   const rootNode = {
     ...STUDY_GRAPH_ROOT,
     type: "root",
@@ -601,19 +602,26 @@ function createStudyGraphModel(width, height) {
   };
   const nodes = [rootNode];
   const links = [];
+  const compactAreaGap = (height - 300) / STUDY_GRAPH_AREAS.length;
 
   STUDY_GRAPH_AREAS.forEach((area, areaIndex) => {
     const angle = -Math.PI / 2 + (areaIndex / STUDY_GRAPH_AREAS.length) * Math.PI * 2;
+    const areaX = compact
+      ? centerX + (areaIndex % 2 === 0 ? -18 : 18)
+      : centerX + Math.cos(angle) * areaRingX;
+    const areaY = compact
+      ? 150 + areaIndex * compactAreaGap
+      : centerY + Math.sin(angle) * areaRingY;
     const areaNode = {
       ...area,
       type: "area",
       radius: getStudyNodeRadius({ type: "area" }),
-      x: centerX + Math.cos(angle) * areaRing,
-      y: centerY + Math.sin(angle) * (compact ? areaRing * 1.28 : areaRing),
+      x: areaX,
+      y: areaY,
       vx: 0,
       vy: 0,
-      homeX: centerX + Math.cos(angle) * areaRing,
-      homeY: centerY + Math.sin(angle) * (compact ? areaRing * 1.28 : areaRing)
+      homeX: areaX,
+      homeY: areaY
     };
 
     nodes.push(areaNode);
@@ -622,27 +630,46 @@ function createStudyGraphModel(width, height) {
       sourceId: rootNode.id,
       targetId: areaNode.id,
       areaId: area.id,
-      distance: compact ? 136 : 260,
-      strength: 0.04
+      distance: Math.hypot(areaX - centerX, areaY - centerY),
+      strength: compact ? 0.012 : 0.032
     });
 
     area.subareas.forEach((subarea, subareaIndex) => {
       const offset = subareaIndex - (area.subareas.length - 1) / 2;
-      const subareaAngle = angle + offset * (compact ? 0.42 : 0.32);
+      const subareaAngle = angle + offset * 0.42;
       const subareaId = `${area.id}-${sanitizeId(subarea)}`;
+      const compactNodeOnLeft = subareaIndex % 2 === 0;
+      const subareaX = compact
+        ? (compactNodeOnLeft ? 28 : width - 28)
+        : areaX + Math.cos(subareaAngle) * subareaRing;
+      const subareaY = compact
+        ? areaY + 92 + subareaIndex * 21
+        : areaY + Math.sin(subareaAngle) * subareaRing;
+      const nearLeftEdge = subareaX < width * 0.2;
+      const nearRightEdge = subareaX > width * 0.8;
+      const labelPointsTowardCenter = compact || nearLeftEdge || nearRightEdge;
+      const labelOnLeft = labelPointsTowardCenter ? subareaX < centerX : subareaX >= centerX;
+      const angleDirection = Math.cos(angle);
+      const verticalBranchLabelOffset = Math.abs(angleDirection) < 0.3
+        ? offset * 24
+        : Math.sign(angleDirection) * offset * 18;
       const subareaNode = {
         id: subareaId,
         type: "subarea",
         areaId: area.id,
         areaTitle: area.title,
         title: subarea,
+        compact,
         radius: getStudyNodeRadius({ type: "subarea" }),
-        x: areaNode.x + Math.cos(subareaAngle) * subareaRing,
-        y: areaNode.y + Math.sin(subareaAngle) * subareaRing,
+        x: subareaX,
+        y: subareaY,
         vx: 0,
         vy: 0,
-        homeX: areaNode.x + Math.cos(subareaAngle) * subareaRing,
-        homeY: areaNode.y + Math.sin(subareaAngle) * subareaRing
+        homeX: subareaX,
+        homeY: subareaY,
+        labelAnchor: labelOnLeft ? "start" : "end",
+        labelOffsetX: labelOnLeft ? 17 : -17,
+        labelOffsetY: compact ? 4 : verticalBranchLabelOffset + 4
       };
 
       nodes.push(subareaNode);
@@ -651,8 +678,8 @@ function createStudyGraphModel(width, height) {
         sourceId: areaNode.id,
         targetId: subareaNode.id,
         areaId: area.id,
-        distance: compact ? 64 : 108,
-        strength: 0.06
+        distance: Math.hypot(subareaX - areaX, subareaY - areaY),
+        strength: compact ? 0.018 : 0.045
       });
     });
   });
@@ -709,6 +736,70 @@ function appendStudyGraphIcon(parent, node) {
   parent.appendChild(icon);
 }
 
+function getStudyAreaTitleLines(title) {
+  if (title.length <= 14 || !title.includes(" ")) return [title];
+
+  const words = title.split(" ");
+  const splitIndex = Math.ceil(words.length / 2);
+
+  return [words.slice(0, splitIndex).join(" "), words.slice(splitIndex).join(" ")];
+}
+
+function getStudySubareaTitleLines(title, compact) {
+  if (compact || title.length <= 20 || !title.includes(" ")) return [title];
+
+  const words = title.split(" ");
+  let firstLine = "";
+  let secondLine = "";
+
+  words.forEach((word) => {
+    if (!firstLine || (firstLine.length + word.length + 1 <= Math.ceil(title.length / 2))) {
+      firstLine = `${firstLine} ${word}`.trim();
+    } else {
+      secondLine = `${secondLine} ${word}`.trim();
+    }
+  });
+
+  return secondLine ? [firstLine, secondLine] : [title];
+}
+
+function appendStudyGraphLabel(parent, node) {
+  if (node.type === "root") return;
+
+  const label = createSvgElement("text", `study-node-label study-node-label-${node.type}`);
+
+  if (node.type === "area") {
+    const lines = getStudyAreaTitleLines(node.title);
+
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("y", String(node.radius + 25));
+    lines.forEach((line, lineIndex) => {
+      const textLine = createSvgElement("tspan");
+
+      textLine.textContent = line;
+      textLine.setAttribute("x", "0");
+      textLine.setAttribute("dy", lineIndex === 0 ? "0" : "15");
+      label.appendChild(textLine);
+    });
+  } else {
+    const lines = getStudySubareaTitleLines(node.title, node.compact);
+
+    label.setAttribute("text-anchor", node.labelAnchor);
+    label.setAttribute("x", String(node.labelOffsetX));
+    label.setAttribute("y", String(node.labelOffsetY - (lines.length - 1) * 6));
+    lines.forEach((line, lineIndex) => {
+      const textLine = createSvgElement("tspan");
+
+      textLine.textContent = line;
+      textLine.setAttribute("x", String(node.labelOffsetX));
+      textLine.setAttribute("dy", lineIndex === 0 ? "0" : "12");
+      label.appendChild(textLine);
+    });
+  }
+
+  parent.appendChild(label);
+}
+
 function createStudyGraphNode(node) {
   const group = createSvgElement("g", `study-node study-node-${node.type}`);
   const circle = createSvgElement("circle", "study-node-circle");
@@ -732,6 +823,7 @@ function createStudyGraphNode(node) {
   circle.setAttribute("r", String(node.radius));
   group.appendChild(circle);
   appendStudyGraphIcon(group, node);
+  appendStudyGraphLabel(group, node);
 
   return group;
 }
@@ -745,13 +837,9 @@ function updateStudyGraphPanel() {
 
   if (!activeArea) {
     studyGraphPanel.append(
-      createElement("span", "study-panel-code", "K0Sec"),
+      createElement("span", "study-panel-code", "K0Sec // MAPA DE ESTUDOS"),
       createElement("h3", "", "Cibersegurança em camadas."),
-      createElement(
-        "p",
-        "",
-        "Selecione uma área para destacar suas conexões, ver subáreas relacionadas e ler a descrição do caminho de estudo."
-      )
+      createElement("p", "", "Explore as conexões entre cada área e seus assuntos de estudo.")
     );
 
     if (studyGraphClear) studyGraphClear.hidden = true;
@@ -761,13 +849,13 @@ function updateStudyGraphPanel() {
   const code = createElement("span", "study-panel-code", `${activeArea.index} ${activeArea.code}`);
   const title = createElement("h3", "", activeArea.title);
   const description = createElement("p", "", activeArea.description);
-  const list = createElement("ul", "study-panel-list");
+  const accessibleSubareas = createElement("ul", "sr-only");
 
   activeArea.subareas.forEach((subarea) => {
-    list.appendChild(createElement("li", "", subarea));
+    accessibleSubareas.appendChild(createElement("li", "", subarea));
   });
 
-  studyGraphPanel.append(code, title, description, list);
+  studyGraphPanel.append(code, title, description, accessibleSubareas);
 
   if (studyGraphClear && studyGraphState.selectedAreaId) {
     studyGraphClear.hidden = false;
@@ -823,6 +911,55 @@ function renderStudyGraphPositions() {
     link.element?.setAttribute("x2", link.target.x.toFixed(2));
     link.element?.setAttribute("y2", link.target.y.toFixed(2));
   });
+}
+
+function shiftStudyGraphLabel(label, amount) {
+  const currentShift = Number(label.dataset.labelShiftY || 0);
+  const nextShift = currentShift + amount;
+
+  label.dataset.labelShiftY = String(nextShift);
+  label.setAttribute("transform", `translate(0 ${nextShift})`);
+}
+
+function resolveStudyGraphLabelCollisions() {
+  if (studyGraphState.layoutFrame?.compact || !studyGraphFrame) return;
+
+  const labels = [...studyGraphNodes.querySelectorAll(".study-node-label")];
+  const frameBox = studyGraphFrame.getBoundingClientRect();
+
+  labels.forEach((label) => {
+    label.dataset.labelShiftY = "0";
+    label.removeAttribute("transform");
+  });
+
+  for (let pass = 0; pass < 8; pass += 1) {
+    let adjusted = false;
+
+    for (let index = 0; index < labels.length; index += 1) {
+      for (let nextIndex = index + 1; nextIndex < labels.length; nextIndex += 1) {
+        const firstLabel = labels[index];
+        const secondLabel = labels[nextIndex];
+        const firstBox = firstLabel.getBoundingClientRect();
+        const secondBox = secondLabel.getBoundingClientRect();
+        const overlapX = Math.min(firstBox.right, secondBox.right) - Math.max(firstBox.left, secondBox.left);
+        const overlapY = Math.min(firstBox.bottom, secondBox.bottom) - Math.max(firstBox.top, secondBox.top);
+
+        if (overlapX <= 3 || overlapY <= 2) continue;
+
+        const upperLabel = firstBox.top <= secondBox.top ? firstLabel : secondLabel;
+        const lowerLabel = upperLabel === firstLabel ? secondLabel : firstLabel;
+        const upperBox = upperLabel.getBoundingClientRect();
+        const lowerBox = lowerLabel.getBoundingClientRect();
+        const distance = overlapY + 7;
+        const canMoveDown = frameBox.bottom - lowerBox.bottom >= distance;
+
+        shiftStudyGraphLabel(canMoveDown ? lowerLabel : upperLabel, canMoveDown ? distance : -distance);
+        adjusted = true;
+      }
+    }
+
+    if (!adjusted) break;
+  }
 }
 
 function keepStudyNodeInBounds(node) {
@@ -1001,6 +1138,7 @@ function renderStudyGraph() {
   runStudyGraphSimulation(studyGraphState.motionIsReduced ? 1 : 90);
   renderStudyGraphPositions();
   updateStudyGraphState();
+  window.requestAnimationFrame(resolveStudyGraphLabelCollisions);
 }
 
 function selectStudyArea(areaId) {

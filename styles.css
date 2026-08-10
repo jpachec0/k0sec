@@ -385,23 +385,6 @@ p {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .study-graph-frame {
-    min-height: clamp(40rem, 64vh, 50rem);
-  }
-}
-
-@media (max-width: 980px) {
-  .study-graph-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .study-graph-frame {
-    min-height: 42rem;
-  }
-
-  .study-graph-panel {
-    min-height: auto;
-  }
 }
 
 .hero-copy {
@@ -627,32 +610,51 @@ p {
 }
 
 #areas {
-  --container: 1360px;
+  width: 100%;
+  max-width: none;
+  padding-right: 0;
+  padding-left: 0;
+  overflow: hidden;
+}
+
+#areas .section-heading {
+  width: min(100% - 4rem, 1360px);
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .study-graph-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.28fr);
-  gap: 1rem;
-  align-items: stretch;
+  width: 100%;
 }
 
-.study-graph-frame,
-.study-graph-panel {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
+.study-graph-detail {
+  display: grid;
+  justify-items: center;
+  width: min(100% - 4rem, 46rem);
+  min-height: 8.5rem;
+  margin: 2rem auto 0;
+  text-align: center;
+}
+
+.study-graph-detail h3 {
+  margin: 0.55rem 0 0.45rem;
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+}
+
+.study-graph-detail p {
+  max-width: 44rem;
+  margin: 0;
+  font-size: 0.92rem;
 }
 
 .study-graph-frame {
   position: relative;
-  min-height: clamp(46rem, 74vh, 58rem);
-  overflow: hidden;
+  min-height: clamp(64rem, 94vh, 74rem);
+  margin-top: 0.75rem;
   cursor: default;
   background:
-    radial-gradient(circle at 50% 48%, rgba(118, 87, 255, 0.14), transparent 20rem),
-    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.035), transparent 12rem),
-    var(--color-card);
+    radial-gradient(circle at 50% 50%, rgba(118, 87, 255, 0.12), transparent 23rem),
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.025), transparent 15rem);
 }
 
 .study-graph-frame::before {
@@ -662,8 +664,9 @@ p {
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 3.1rem 3.1rem;
-  mask-image: radial-gradient(circle at center, black, transparent 74%);
+  background-size: 4rem 4rem;
+  mask-image: radial-gradient(ellipse at center, black, transparent 78%);
+  opacity: 0.55;
   content: "";
 }
 
@@ -728,11 +731,11 @@ p {
 }
 
 .study-node.is-muted {
-  opacity: 0.28;
+  opacity: 0.62;
 }
 
 .study-node-subarea.is-muted {
-  opacity: 0.2;
+  opacity: 0.54;
 }
 
 .study-node.is-selected .study-node-circle {
@@ -781,6 +784,33 @@ p {
   opacity: 0.88;
 }
 
+.study-node-label {
+  fill: rgba(245, 245, 245, 0.66);
+  font-family: var(--font-body);
+  letter-spacing: 0;
+  pointer-events: none;
+  user-select: none;
+  transition: fill 180ms ease, opacity 180ms ease;
+}
+
+.study-node-label-area {
+  fill: rgba(245, 245, 245, 0.9);
+  font-family: var(--font-title);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.study-node-label-subarea {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.study-node.is-related .study-node-label,
+.study-node.is-selected .study-node-label,
+.study-node:focus-visible .study-node-label {
+  fill: var(--color-text);
+}
+
 .study-node-icon-part {
   fill: none;
   stroke: rgba(245, 245, 245, 0.86);
@@ -798,68 +828,29 @@ p {
   stroke: var(--color-text);
 }
 
-.study-graph-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  padding: 1.2rem;
-  background:
-    linear-gradient(150deg, rgba(118, 87, 255, 0.1), transparent 44%),
-    var(--color-card);
-}
-
-.study-graph-panel h3 {
-  margin: 0.85rem 0 0.75rem;
-  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
-}
-
-.study-graph-panel p {
-  margin-bottom: 0;
-  font-size: 0.92rem;
-}
-
 .study-panel-code {
   width: fit-content;
   font-size: 0.75rem;
 }
 
-.study-panel-list {
-  display: grid;
-  gap: 0.55rem;
-  margin: 1.2rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.study-panel-list li {
-  padding: 0.64rem 0.72rem;
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid var(--color-border);
-  border-radius: 0.42rem;
-  font-size: 0.82rem;
-}
-
 .study-clear-button {
   width: fit-content;
-  min-height: 2.55rem;
-  margin-top: auto;
-  padding: 0 0.9rem;
-  color: var(--color-text);
+  min-height: 2rem;
+  margin-top: 0.75rem;
+  padding: 0;
+  color: var(--color-accent);
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border);
-  border-radius: 0.45rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(118, 87, 255, 0.45);
   cursor: pointer;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background 180ms ease;
+  transition: color 180ms ease, border-color 180ms ease;
 }
 
 .study-clear-button:hover,
 .study-clear-button:focus-visible {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(118, 87, 255, 0.48);
-  box-shadow: 0 0 24px rgba(118, 87, 255, 0.14);
+  color: var(--color-text);
+  border-color: var(--color-text);
 }
 
 .beginner-section {
@@ -1222,16 +1213,33 @@ p {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .study-graph-shell {
-    grid-template-columns: 1fr;
+  .beginner-section {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 1079px) {
+  #areas .section-heading,
+  .study-graph-detail {
+    width: min(100% - 2rem, 46rem);
+  }
+
+  .study-graph-detail {
+    min-height: 9.5rem;
+    margin-top: 1.5rem;
   }
 
   .study-graph-frame {
-    min-height: 42rem;
+    min-height: 118rem;
+    margin-top: 0;
   }
 
-  .beginner-section {
-    gap: 2rem;
+  .study-node-label-area {
+    font-size: 0.78rem;
+  }
+
+  .study-node-label-subarea {
+    font-size: 0.67rem;
   }
 }
 
@@ -1288,21 +1296,12 @@ p {
     min-height: 11.5rem;
   }
 
-  .study-graph-shell {
-    grid-template-columns: 1fr;
-    gap: 0.85rem;
-  }
-
   .study-graph-frame {
-    min-height: 38rem;
+    min-height: 112rem;
   }
 
   .study-line-subarea {
     opacity: 0.34;
-  }
-
-  .study-graph-panel {
-    padding: 1rem;
   }
 
   .site-footer {

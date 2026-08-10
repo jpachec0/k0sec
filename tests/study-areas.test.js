@@ -80,10 +80,26 @@ test("graph script supports draggable SVG nodes", () => {
   assert.match(script, /tickStudyGraph/);
 });
 
-test("graph renders icon nodes without visible labels", () => {
+test("graph renders icon nodes with persistent labels", () => {
   const script = readFileSync(join(rootDir, "scripts.js"), "utf8");
 
   assert.match(script, /STUDY_GRAPH_ICONS/);
   assert.match(script, /study-node-icon/);
-  assert.doesNotMatch(script, /appendSvgText/);
+  assert.match(script, /appendStudyGraphLabel/);
+});
+
+test("graph uses an open layout without a side panel", () => {
+  const html = readFileSync(join(rootDir, "index.html"), "utf8");
+
+  assert.match(html, /class="study-graph-detail"/);
+  assert.doesNotMatch(html, /class="study-graph-panel"/);
+  assert.doesNotMatch(html, /<aside[^>]*data-study-graph-panel/);
+});
+
+test("graph provides separate wide and compact layouts", () => {
+  const script = readFileSync(join(rootDir, "scripts.js"), "utf8");
+
+  assert.match(script, /width < 1080/);
+  assert.match(script, /compactAreaGap/);
+  assert.match(script, /resolveStudyGraphLabelCollisions/);
 });
