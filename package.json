@@ -5,11 +5,12 @@
   "description": "Landing page oficial da comunidade K0Sec.",
   "scripts": {
     "dev": "npx --yes http-server . -p 4173 -a 127.0.0.1",
-    "check:js": "node --check scripts.js",
+    "check:js": "node --check study-areas-data.js && node --check scripts.js && node --check tests/study-areas.test.js",
     "check:html": "npx --yes html-validate index.html",
     "check:manifest": "node -e \"JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8'))\"",
     "check:sitemap": "xmllint --noout sitemap.xml",
-    "validate": "npm run check:js && npm run check:html && npm run check:manifest && npm run check:sitemap"
+    "test": "node --test tests/study-areas.test.js",
+    "validate": "npm run check:js && npm test && npm run check:html && npm run check:manifest && npm run check:sitemap"
   },
   "keywords": [
     "k0sec",

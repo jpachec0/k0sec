@@ -77,7 +77,7 @@ O visual é majoritariamente preto, branco e cinza, com violeta usado apenas em 
 1. **Header** — Navegação fixa com blur, menu mobile e CTA para Discord.
 2. **Hero** — Proposta principal, CTAs, status técnico e símbolo da K0Sec.
 3. **Sobre** — Origem e princípios da comunidade.
-4. **Áreas** — Cards para Red Team, Blue Team, redes, Linux, AppSec, OSINT, CTF e programação.
+4. **Áreas** — Grafo interativo para Red Team, Blue Team, redes, Linux, AppSec, OSINT, CTF e programação.
 5. **Iniciantes** — Jornada para quem não sabe por onde começar.
 6. **Atividades** — Atividades atuais e planejadas sem inventar números ou resultados.
 7. **Projetos** — Espaço para GitHub, roadmaps, writeups e documentação.

@@ -107,6 +107,7 @@
         }
       }
     </script>
+    <script src="study-areas-data.js" defer></script>
     <script src="scripts.js" defer></script>
   </head>
   <body>
@@ -196,55 +197,30 @@
           <h2 id="areas-title">Encontre sua área.</h2>
         </div>
 
-        <div class="area-grid">
-          <article class="area-card reveal">
-            <span class="card-index">01</span>
-            <span class="card-icon" aria-hidden="true">RT</span>
-            <h3>Red Team</h3>
-            <p>Estudo de técnicas ofensivas, testes de segurança e identificação de vulnerabilidades em ambientes autorizados.</p>
-          </article>
-          <article class="area-card reveal">
-            <span class="card-index">02</span>
-            <span class="card-icon" aria-hidden="true">BT</span>
-            <h3>Blue Team</h3>
-            <p>Defesa, monitoramento, resposta a incidentes e fortalecimento de sistemas contra ameaças reais.</p>
-          </article>
-          <article class="area-card reveal">
-            <span class="card-index">03</span>
-            <span class="card-icon" aria-hidden="true">NW</span>
-            <h3>Segurança de Redes</h3>
-            <p>Fundamentos de redes, análise de tráfego, segmentação e práticas para proteger infraestruturas.</p>
-          </article>
-          <article class="area-card reveal">
-            <span class="card-index">04</span>
-            <span class="card-icon" aria-hidden="true">LX</span>
-            <h3>Linux</h3>
-            <p>Uso do sistema, terminal, permissões, automação e base operacional para laboratórios de segurança.</p>
-          </article>
-          <article class="area-card reveal">
-            <span class="card-index">05</span>
-            <span class="card-icon" aria-hidden="true">AS</span>
-            <h3>AppSec</h3>
-            <p>Segurança em aplicações, revisão de código, boas práticas e vulnerabilidades comuns em software.</p>
-          </article>
-          <article class="area-card reveal">
-            <span class="card-index">06</span>
-            <span class="card-icon" aria-hidden="true">OI</span>
-            <h3>OSINT</h3>
-            <p>Coleta e análise de informações públicas com metodologia, contexto e responsabilidade.</p>
-          </article>
-          <article class="area-card reveal">
-            <span class="card-index">07</span>
-            <span class="card-icon" aria-hidden="true">CT</span>
-            <h3>CTF</h3>
-            <p>Desafios práticos para desenvolver raciocínio, pesquisa, exploração e documentação técnica.</p>
-          </article>
-          <article class="area-card reveal">
-            <span class="card-index">08</span>
-            <span class="card-icon" aria-hidden="true">PG</span>
-            <h3>Programação</h3>
-            <p>Scripts, automação, lógica, ferramentas e projetos úteis para quem estuda segurança digital.</p>
-          </article>
+        <div
+          class="study-graph-shell reveal"
+          data-study-graph
+          role="group"
+          aria-label="Grafo interativo das áreas de estudo da K0Sec"
+        >
+          <div class="study-graph-frame" data-study-graph-frame>
+            <svg class="study-graph-lines" data-study-graph-lines aria-hidden="true"></svg>
+            <div class="study-graph-nodes" data-study-graph-nodes></div>
+          </div>
+
+          <aside class="study-graph-panel" data-study-graph-panel aria-live="polite">
+            <span class="study-panel-code">K0Sec</span>
+            <h3>Cibersegurança em camadas.</h3>
+            <p>
+              Selecione uma área para destacar suas conexões, ver subáreas relacionadas e ler a
+              descrição do caminho de estudo.
+            </p>
+            <button class="study-clear-button" type="button" data-study-graph-clear hidden>
+              Ver todas as áreas
+            </button>
+          </aside>
+
+          <div class="sr-only" data-study-graph-text></div>
         </div>
       </section>
 
