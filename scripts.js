@@ -111,6 +111,7 @@ const revealElements = document.querySelectorAll(".reveal");
 const subtitleField = document.querySelector(".ambient-subtitle-field");
 const studyGraphRoot = document.querySelector("[data-study-graph]");
 const studyGraphFrame = document.querySelector("[data-study-graph-frame]");
+const studyGraphCanvas = document.querySelector("[data-study-graph-canvas]");
 const studyGraphLines = document.querySelector("[data-study-graph-lines]");
 const studyGraphNodes = document.querySelector("[data-study-graph-nodes]");
 const studyGraphPanel = document.querySelector("[data-study-graph-panel]");
@@ -126,7 +127,13 @@ const STUDY_GRAPH_ROOT = {
 const studyGraphState = {
   selectedAreaId: "",
   previewAreaId: "",
-  layoutFrame: null
+  layoutFrame: null,
+  nodes: [],
+  links: [],
+  nodeMap: new Map(),
+  animationFrame: null,
+  activePointer: null,
+  motionIsReduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches
 };
 
 function randomBetween(min, max) {
@@ -504,148 +511,180 @@ function getStudyGraphActiveAreaId() {
   return studyGraphState.previewAreaId || studyGraphState.selectedAreaId;
 }
 
-function setStudyNodePosition(element, node) {
-  element.style.setProperty("--node-x", `${node.x}px`);
-  element.style.setProperty("--node-y", `${node.y}px`);
+function getStudyNodeRadius(node) {
+  if (node.type === "root") return 46;
+  if (node.type === "area") return 36;
+  return 10;
 }
 
-function createStudyNodeButton(node) {
-  const button = document.createElement("button");
-
-  button.type = "button";
-  button.className = `study-node study-node-${node.type}`;
-  button.dataset.studyNode = node.id;
-  button.dataset.nodeType = node.type;
-
-  if (node.areaId) button.dataset.areaId = node.areaId;
-
-  setStudyNodePosition(button, node);
-
-  if (node.type === "root") {
-    button.setAttribute("aria-label", "Mostrar todas as áreas de estudo da K0Sec");
-    button.innerHTML = `
-      <span class="study-node-code">${STUDY_GRAPH_ROOT.code}</span>
-      <span class="study-node-title">${STUDY_GRAPH_ROOT.description}</span>
-    `;
-    return button;
-  }
-
-  if (node.type === "area") {
-    button.setAttribute("aria-label", `${node.index} ${node.code}, ${node.title}`);
-    button.setAttribute("aria-pressed", "false");
-    button.setAttribute("aria-expanded", "false");
-    button.innerHTML = `
-      <span class="study-node-index">${node.index}</span>
-      <span class="study-node-code">${node.code}</span>
-      <span class="study-node-title">${node.title}</span>
-    `;
-    return button;
-  }
-
-  button.setAttribute("aria-label", `Subárea de ${node.areaTitle}: ${node.title}`);
-  button.innerHTML = `<span>${node.title}</span>`;
-
-  return button;
+function getStudyGraphNodeLabel(node) {
+  if (node.type === "root") return "Mostrar todas as áreas de estudo da K0Sec";
+  if (node.type === "area") return `${node.index} ${node.code}, ${node.title}`;
+  return `Subárea de ${node.areaTitle}: ${node.title}`;
 }
 
-function createStudyGraphLine(link) {
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-
-  line.setAttribute("x1", String(link.source.x));
-  line.setAttribute("y1", String(link.source.y));
-  line.setAttribute("x2", String(link.target.x));
-  line.setAttribute("y2", String(link.target.y));
-  line.dataset.studyLine = `${link.source.id}:${link.target.id}`;
-  line.dataset.sourceId = link.source.id;
-  line.dataset.targetId = link.target.id;
-  line.dataset.areaId = link.areaId;
-  line.classList.add("study-graph-line", `study-line-${link.kind}`);
-
-  return line;
+function getStudyGraphNodeAreaId(node) {
+  if (node.type === "root") return "";
+  return node.areaId || node.id;
 }
 
-function getStudyGraphLayout(width, height) {
+function createSvgElement(tagName, className) {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", tagName);
+
+  if (className) element.setAttribute("class", className);
+
+  return element;
+}
+
+function getStudyGraphPoint(event) {
+  const rect = studyGraphCanvas.getBoundingClientRect();
+  const viewBox = studyGraphCanvas.viewBox.baseVal;
+
+  return {
+    x: ((event.clientX - rect.left) / rect.width) * viewBox.width,
+    y: ((event.clientY - rect.top) / rect.height) * viewBox.height
+  };
+}
+
+function createStudyGraphModel(width, height) {
   const compact = width < 720;
   const centerX = width / 2;
-  const centerY = compact ? 68 : height * 0.49;
-  const nodes = [
-    {
-      ...STUDY_GRAPH_ROOT,
-      type: "root",
-      x: centerX,
-      y: centerY
-    }
-  ];
+  const centerY = compact ? height * 0.45 : height * 0.5;
+  const areaRing = compact ? Math.min(width * 0.36, 158) : Math.min(width * 0.39, height * 0.42);
+  const subareaRing = compact ? 76 : Math.min(width * 0.15, height * 0.2);
+  const rootNode = {
+    ...STUDY_GRAPH_ROOT,
+    type: "root",
+    radius: getStudyNodeRadius({ type: "root" }),
+    x: centerX,
+    y: centerY,
+    vx: 0,
+    vy: 0,
+    homeX: centerX,
+    homeY: centerY,
+    fixed: true
+  };
+  const nodes = [rootNode];
   const links = [];
-  const marginX = compact ? 92 : 120;
-  const marginY = compact ? 42 : 58;
 
   STUDY_GRAPH_AREAS.forEach((area, areaIndex) => {
     const angle = -Math.PI / 2 + (areaIndex / STUDY_GRAPH_AREAS.length) * Math.PI * 2;
-    const areaNode = compact
-      ? {
-          ...area,
-          type: "area",
-          x: areaIndex % 2 === 0 ? width * 0.35 : width * 0.65,
-          y: 168 + areaIndex * 78
-        }
-      : {
-          ...area,
-          type: "area",
-          x: centerX + Math.cos(angle) * width * 0.31,
-          y: centerY + Math.sin(angle) * height * 0.3
-        };
+    const areaNode = {
+      ...area,
+      type: "area",
+      radius: getStudyNodeRadius({ type: "area" }),
+      x: centerX + Math.cos(angle) * areaRing,
+      y: centerY + Math.sin(angle) * (compact ? areaRing * 1.28 : areaRing),
+      vx: 0,
+      vy: 0,
+      homeX: centerX + Math.cos(angle) * areaRing,
+      homeY: centerY + Math.sin(angle) * (compact ? areaRing * 1.28 : areaRing)
+    };
 
-    areaNode.x = clamp(areaNode.x, marginX, width - marginX);
-    areaNode.y = clamp(areaNode.y, marginY, height - marginY);
     nodes.push(areaNode);
     links.push({
       kind: "area",
-      source: nodes[0],
-      target: areaNode,
-      areaId: area.id
+      sourceId: rootNode.id,
+      targetId: areaNode.id,
+      areaId: area.id,
+      distance: compact ? 136 : 260,
+      strength: 0.04
     });
 
     area.subareas.forEach((subarea, subareaIndex) => {
+      const offset = subareaIndex - (area.subareas.length - 1) / 2;
+      const subareaAngle = angle + offset * (compact ? 0.42 : 0.32);
       const subareaId = `${area.id}-${sanitizeId(subarea)}`;
-      const offsetIndex = subareaIndex - (area.subareas.length - 1) / 2;
-      const subareaAngle = compact ? Math.PI / 2 : angle + offsetIndex * 0.27;
-      const compactSide = areaIndex % 2 === 0 ? 1 : -1;
-      const tangentX = -Math.sin(angle);
-      const tangentY = Math.cos(angle);
-      const subareaNode = compact
-        ? {
-            id: subareaId,
-            type: "subarea",
-            areaId: area.id,
-            areaTitle: area.title,
-            title: subarea,
-            x: compactSide > 0 ? width * 0.72 : width * 0.28,
-            y: areaNode.y + (subareaIndex - (area.subareas.length - 1) / 2) * 32
-          }
-        : {
-            id: subareaId,
-            type: "subarea",
-            areaId: area.id,
-            areaTitle: area.title,
-            title: subarea,
-            x: areaNode.x + Math.cos(subareaAngle) * 118 + tangentX * offsetIndex * 104,
-            y: areaNode.y + Math.sin(subareaAngle) * 92 + tangentY * offsetIndex * 72
-          };
+      const subareaNode = {
+        id: subareaId,
+        type: "subarea",
+        areaId: area.id,
+        areaTitle: area.title,
+        title: subarea,
+        radius: getStudyNodeRadius({ type: "subarea" }),
+        x: areaNode.x + Math.cos(subareaAngle) * subareaRing,
+        y: areaNode.y + Math.sin(subareaAngle) * subareaRing,
+        vx: 0,
+        vy: 0,
+        homeX: areaNode.x + Math.cos(subareaAngle) * subareaRing,
+        homeY: areaNode.y + Math.sin(subareaAngle) * subareaRing
+      };
 
-      subareaNode.x = clamp(subareaNode.x, compact ? 76 : 78, width - (compact ? 76 : 78));
-      subareaNode.y = clamp(subareaNode.y, compact ? 116 : 48, height - 48);
       nodes.push(subareaNode);
       links.push({
         kind: "subarea",
-        source: areaNode,
-        target: subareaNode,
-        areaId: area.id
+        sourceId: areaNode.id,
+        targetId: subareaNode.id,
+        areaId: area.id,
+        distance: compact ? 64 : 108,
+        strength: 0.06
       });
     });
   });
 
-  return { nodes, links, width, height, compact };
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+
+  links.forEach((link) => {
+    link.source = nodeMap.get(link.sourceId);
+    link.target = nodeMap.get(link.targetId);
+  });
+
+  return { nodes, links, nodeMap, compact, width, height };
+}
+
+function createStudyGraphLine(link) {
+  const line = createSvgElement("line", `study-graph-line study-line-${link.kind}`);
+
+  line.dataset.studyLine = `${link.sourceId}:${link.targetId}`;
+  line.dataset.sourceId = link.sourceId;
+  line.dataset.targetId = link.targetId;
+  line.dataset.areaId = link.areaId;
+
+  return line;
+}
+
+function appendSvgText(parent, className, text, y) {
+  const textElement = createSvgElement("text", className);
+
+  textElement.textContent = text;
+  textElement.setAttribute("text-anchor", "middle");
+  textElement.setAttribute("y", String(y));
+  parent.appendChild(textElement);
+
+  return textElement;
+}
+
+function createStudyGraphNode(node) {
+  const group = createSvgElement("g", `study-node study-node-${node.type}`);
+  const circle = createSvgElement("circle", "study-node-circle");
+
+  group.dataset.studyNode = node.id;
+  group.dataset.nodeType = node.type;
+  group.dataset.areaId = getStudyGraphNodeAreaId(node);
+  group.setAttribute("role", "button");
+  group.setAttribute("tabindex", "0");
+  group.setAttribute("aria-label", getStudyGraphNodeLabel(node));
+
+  if (node.type === "area") {
+    group.setAttribute("aria-pressed", "false");
+    group.setAttribute("aria-expanded", "false");
+  }
+
+  circle.setAttribute("r", String(node.radius));
+  group.appendChild(circle);
+
+  if (node.type === "root") {
+    appendSvgText(group, "study-node-code", STUDY_GRAPH_ROOT.code, -4);
+    appendSvgText(group, "study-node-title", STUDY_GRAPH_ROOT.description, 18);
+  } else if (node.type === "area") {
+    appendSvgText(group, "study-node-code", node.code, -3);
+    appendSvgText(group, "study-node-title", node.title, node.radius + 19);
+    appendSvgText(group, "study-node-index", node.index, -node.radius - 10);
+  } else {
+    appendSvgText(group, "study-node-title", node.title, node.radius + 16);
+  }
+
+  return group;
 }
 
 function updateStudyGraphPanel() {
@@ -722,6 +761,134 @@ function updateStudyGraphState() {
   updateStudyGraphPanel();
 }
 
+function renderStudyGraphPositions() {
+  studyGraphState.nodes.forEach((node) => {
+    node.element?.setAttribute("transform", `translate(${node.x.toFixed(2)} ${node.y.toFixed(2)})`);
+  });
+
+  studyGraphState.links.forEach((link) => {
+    link.element?.setAttribute("x1", link.source.x.toFixed(2));
+    link.element?.setAttribute("y1", link.source.y.toFixed(2));
+    link.element?.setAttribute("x2", link.target.x.toFixed(2));
+    link.element?.setAttribute("y2", link.target.y.toFixed(2));
+  });
+}
+
+function keepStudyNodeInBounds(node) {
+  const padding = node.type === "subarea" ? 28 : node.radius + 22;
+
+  node.x = clamp(node.x, padding, studyGraphState.layoutFrame.width - padding);
+  node.y = clamp(node.y, padding, studyGraphState.layoutFrame.height - padding);
+}
+
+function tickStudyGraph() {
+  const nodes = studyGraphState.nodes;
+  const links = studyGraphState.links;
+  const frame = studyGraphState.layoutFrame;
+
+  if (!frame) return;
+
+  links.forEach((link) => {
+    const dx = link.target.x - link.source.x;
+    const dy = link.target.y - link.source.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const force = (distance - link.distance) * link.strength;
+    const fx = (dx / distance) * force;
+    const fy = (dy / distance) * force;
+
+    if (!link.source.fixed && !link.source.dragging) {
+      link.source.vx += fx;
+      link.source.vy += fy;
+    }
+
+    if (!link.target.fixed && !link.target.dragging) {
+      link.target.vx -= fx;
+      link.target.vy -= fy;
+    }
+  });
+
+  for (let index = 0; index < nodes.length; index += 1) {
+    for (let nextIndex = index + 1; nextIndex < nodes.length; nextIndex += 1) {
+      const node = nodes[index];
+      const otherNode = nodes[nextIndex];
+      const dx = otherNode.x - node.x;
+      const dy = otherNode.y - node.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const minDistance = node.radius + otherNode.radius + (node.type === "subarea" || otherNode.type === "subarea" ? 18 : 34);
+
+      if (distance >= minDistance) continue;
+
+      const force = (minDistance - distance) * 0.018;
+      const fx = (dx / distance) * force;
+      const fy = (dy / distance) * force;
+
+      if (!node.fixed && !node.dragging) {
+        node.vx -= fx;
+        node.vy -= fy;
+      }
+
+      if (!otherNode.fixed && !otherNode.dragging) {
+        otherNode.vx += fx;
+        otherNode.vy += fy;
+      }
+    }
+  }
+
+  nodes.forEach((node) => {
+    if (node.fixed) {
+      node.x = node.homeX;
+      node.y = node.homeY;
+      node.vx = 0;
+      node.vy = 0;
+      return;
+    }
+
+    if (!node.dragging) {
+      const homeStrength = node.type === "area" ? 0.006 : 0.012;
+
+      node.vx += (node.homeX - node.x) * homeStrength;
+      node.vy += (node.homeY - node.y) * homeStrength;
+      node.x += node.vx;
+      node.y += node.vy;
+    }
+
+    node.vx *= 0.82;
+    node.vy *= 0.82;
+    keepStudyNodeInBounds(node);
+  });
+
+  renderStudyGraphPositions();
+}
+
+function runStudyGraphSimulation(ticks = 1) {
+  for (let index = 0; index < ticks; index += 1) {
+    tickStudyGraph();
+  }
+}
+
+function animateStudyGraph() {
+  tickStudyGraph();
+
+  const moving = studyGraphState.nodes.some((node) => Math.abs(node.vx) + Math.abs(node.vy) > 0.03 || node.dragging);
+
+  if (moving) {
+    studyGraphState.animationFrame = window.requestAnimationFrame(animateStudyGraph);
+  } else {
+    studyGraphState.animationFrame = null;
+  }
+}
+
+function restartStudyGraphSimulation() {
+  if (studyGraphState.motionIsReduced) {
+    runStudyGraphSimulation(8);
+    return;
+  }
+
+  if (!studyGraphState.animationFrame) {
+    studyGraphState.animationFrame = window.requestAnimationFrame(animateStudyGraph);
+  }
+}
+
 function renderAccessibleStudyGraphText() {
   if (!studyGraphText) return;
 
@@ -746,7 +913,7 @@ function renderAccessibleStudyGraphText() {
 }
 
 function renderStudyGraph() {
-  if (!studyGraphRoot || !studyGraphFrame || !studyGraphLines || !studyGraphNodes || !STUDY_GRAPH_AREAS.length) {
+  if (!studyGraphRoot || !studyGraphFrame || !studyGraphCanvas || !studyGraphLines || !studyGraphNodes || !STUDY_GRAPH_AREAS.length) {
     return;
   }
 
@@ -755,12 +922,33 @@ function renderStudyGraph() {
 
   if (!width || !height) return;
 
-  const layout = getStudyGraphLayout(width, height);
+  if (studyGraphState.animationFrame) {
+    window.cancelAnimationFrame(studyGraphState.animationFrame);
+    studyGraphState.animationFrame = null;
+  }
+
+  const layout = createStudyGraphModel(width, height);
 
   studyGraphState.layoutFrame = { width, height, compact: layout.compact };
-  studyGraphLines.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  studyGraphLines.replaceChildren(...layout.links.map(createStudyGraphLine));
-  studyGraphNodes.replaceChildren(...layout.nodes.map(createStudyNodeButton));
+  studyGraphState.nodes = layout.nodes;
+  studyGraphState.links = layout.links;
+  studyGraphState.nodeMap = layout.nodeMap;
+  studyGraphCanvas.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  studyGraphLines.replaceChildren();
+  studyGraphNodes.replaceChildren();
+
+  layout.links.forEach((link) => {
+    link.element = createStudyGraphLine(link);
+    studyGraphLines.appendChild(link.element);
+  });
+
+  layout.nodes.forEach((node) => {
+    node.element = createStudyGraphNode(node);
+    studyGraphNodes.appendChild(node.element);
+  });
+
+  runStudyGraphSimulation(studyGraphState.motionIsReduced ? 1 : 90);
+  renderStudyGraphPositions();
   updateStudyGraphState();
 }
 
@@ -771,48 +959,137 @@ function selectStudyArea(areaId) {
 }
 
 function initStudyGraph() {
-  if (!studyGraphRoot || !STUDY_GRAPH_AREAS.length) return;
+  if (!studyGraphRoot || !studyGraphCanvas || !STUDY_GRAPH_AREAS.length) return;
 
   renderAccessibleStudyGraphText();
   renderStudyGraph();
 
-  studyGraphRoot.addEventListener("pointerover", (event) => {
-    const node = event.target.closest("[data-study-node]");
-
-    if (!node || node.dataset.nodeType === "root") return;
-
-    studyGraphState.previewAreaId = node.dataset.areaId || node.dataset.studyNode;
-    updateStudyGraphState();
-  });
-
-  studyGraphRoot.addEventListener("pointerout", (event) => {
-    if (studyGraphRoot.contains(event.relatedTarget)) return;
-
-    studyGraphState.previewAreaId = "";
-    updateStudyGraphState();
-  });
-
-  studyGraphRoot.addEventListener("focusin", (event) => {
-    const node = event.target.closest("[data-study-node]");
-
-    if (!node || node.dataset.nodeType === "root") return;
-
-    studyGraphState.previewAreaId = node.dataset.areaId || node.dataset.studyNode;
-    updateStudyGraphState();
-  });
-
-  studyGraphRoot.addEventListener("focusout", (event) => {
-    if (studyGraphRoot.contains(event.relatedTarget)) return;
-
-    studyGraphState.previewAreaId = "";
-    updateStudyGraphState();
-  });
-
-  studyGraphRoot.addEventListener("click", (event) => {
+  studyGraphCanvas.addEventListener("pointerdown", (event) => {
     const node = event.target.closest("[data-study-node]");
 
     if (!node) return;
 
+    const graphNode = studyGraphState.nodeMap.get(node.dataset.studyNode);
+
+    if (!graphNode) return;
+
+    event.preventDefault();
+    studyGraphCanvas.setPointerCapture(event.pointerId);
+    graphNode.dragging = true;
+    studyGraphState.activePointer = {
+      pointerId: event.pointerId,
+      nodeId: graphNode.id,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false
+    };
+  });
+
+  studyGraphCanvas.addEventListener("pointermove", (event) => {
+    const activePointer = studyGraphState.activePointer;
+
+    if (!activePointer || activePointer.pointerId !== event.pointerId) return;
+
+    const node = studyGraphState.nodeMap.get(activePointer.nodeId);
+    const point = getStudyGraphPoint(event);
+
+    if (!node) return;
+
+    node.x = point.x;
+    node.y = point.y;
+    node.vx = 0;
+    node.vy = 0;
+    activePointer.moved = activePointer.moved || Math.hypot(event.clientX - activePointer.startX, event.clientY - activePointer.startY) > 5;
+    keepStudyNodeInBounds(node);
+    renderStudyGraphPositions();
+    restartStudyGraphSimulation();
+  });
+
+  studyGraphCanvas.addEventListener("pointerup", (event) => {
+    const activePointer = studyGraphState.activePointer;
+
+    if (!activePointer || activePointer.pointerId !== event.pointerId) return;
+
+    const node = studyGraphState.nodeMap.get(activePointer.nodeId);
+
+    if (node) {
+      node.dragging = false;
+
+      if (!activePointer.moved) {
+        if (node.type === "root") {
+          studyGraphState.selectedAreaId = "";
+          studyGraphState.previewAreaId = "";
+          updateStudyGraphState();
+        } else {
+          selectStudyArea(node.areaId || node.id);
+        }
+      }
+    }
+
+    studyGraphState.activePointer = null;
+    if (studyGraphCanvas.hasPointerCapture(event.pointerId)) {
+      studyGraphCanvas.releasePointerCapture(event.pointerId);
+    }
+    restartStudyGraphSimulation();
+  });
+
+  studyGraphCanvas.addEventListener("pointercancel", (event) => {
+    const activePointer = studyGraphState.activePointer;
+
+    if (!activePointer || activePointer.pointerId !== event.pointerId) return;
+
+    const node = studyGraphState.nodeMap.get(activePointer.nodeId);
+
+    if (node) node.dragging = false;
+
+    studyGraphState.activePointer = null;
+    restartStudyGraphSimulation();
+  });
+
+  studyGraphCanvas.addEventListener("pointerover", (event) => {
+    const node = event.target.closest("[data-study-node]");
+
+    if (!node) return;
+
+    if (node.dataset.nodeType === "root") {
+      studyGraphState.previewAreaId = "";
+      updateStudyGraphState();
+      return;
+    }
+
+    studyGraphState.previewAreaId = node.dataset.areaId || node.dataset.studyNode;
+    updateStudyGraphState();
+  });
+
+  studyGraphCanvas.addEventListener("pointerout", (event) => {
+    if (studyGraphCanvas.contains(event.relatedTarget)) return;
+
+    studyGraphState.previewAreaId = "";
+    updateStudyGraphState();
+  });
+
+  studyGraphCanvas.addEventListener("focusin", (event) => {
+    const node = event.target.closest("[data-study-node]");
+
+    if (!node || node.dataset.nodeType === "root") return;
+
+    studyGraphState.previewAreaId = node.dataset.areaId || node.dataset.studyNode;
+    updateStudyGraphState();
+  });
+
+  studyGraphCanvas.addEventListener("focusout", (event) => {
+    if (studyGraphCanvas.contains(event.relatedTarget)) return;
+
+    studyGraphState.previewAreaId = "";
+    updateStudyGraphState();
+  });
+
+  studyGraphCanvas.addEventListener("keydown", (event) => {
+    const node = event.target.closest("[data-study-node]");
+
+    if (!node || (event.key !== "Enter" && event.key !== " ")) return;
+
+    event.preventDefault();
     if (node.dataset.nodeType === "root") {
       studyGraphState.selectedAreaId = "";
       studyGraphState.previewAreaId = "";

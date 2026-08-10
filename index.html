@@ -204,8 +204,18 @@
           aria-label="Grafo interativo das áreas de estudo da K0Sec"
         >
           <div class="study-graph-frame" data-study-graph-frame>
-            <svg class="study-graph-lines" data-study-graph-lines aria-hidden="true"></svg>
-            <div class="study-graph-nodes" data-study-graph-nodes></div>
+            <svg
+              class="study-graph-canvas"
+              data-study-graph-canvas
+              role="group"
+              aria-labelledby="study-graph-canvas-title"
+            >
+              <title id="study-graph-canvas-title">
+                Mapa de conexões entre K0Sec, áreas de estudo e subáreas
+              </title>
+              <g class="study-graph-lines" data-study-graph-lines aria-hidden="true"></g>
+              <g class="study-graph-nodes" data-study-graph-nodes></g>
+            </svg>
           </div>
 
           <aside class="study-graph-panel" data-study-graph-panel aria-live="polite">
