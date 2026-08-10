@@ -70,3 +70,12 @@ test("graph script supports selection and keyboard state attributes", () => {
   assert.match(script, /aria-pressed/);
   assert.match(script, /aria-expanded/);
 });
+
+test("graph script supports draggable SVG nodes", () => {
+  const script = readFileSync(join(rootDir, "scripts.js"), "utf8");
+
+  assert.match(script, /data-study-graph-canvas/);
+  assert.match(script, /pointerdown/);
+  assert.match(script, /pointermove/);
+  assert.match(script, /tickStudyGraph/);
+});
