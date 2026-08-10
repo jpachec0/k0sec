@@ -124,6 +124,41 @@ const STUDY_GRAPH_ROOT = {
   code: "K0Sec",
   description: "Cibersegurança"
 };
+const STUDY_GRAPH_ICONS = {
+  "red-team": [
+    ["circle", { cx: 12, cy: 12, r: 6 }],
+    ["circle", { cx: 12, cy: 12, r: 2 }],
+    ["path", { d: "M12 2v3M12 19v3M2 12h3M19 12h3" }]
+  ],
+  "blue-team": [
+    ["path", { d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" }],
+    ["path", { d: "m9 12 2 2 4-4" }]
+  ],
+  "seguranca-de-redes": [
+    ["circle", { cx: 12, cy: 5, r: 2.5 }],
+    ["circle", { cx: 5, cy: 18, r: 2.5 }],
+    ["circle", { cx: 19, cy: 18, r: 2.5 }],
+    ["path", { d: "m10.8 7.2-4.6 8.6M13.2 7.2l4.6 8.6M7.5 18h9" }]
+  ],
+  linux: [
+    ["rect", { x: 3, y: 4, width: 18, height: 16, rx: 2 }],
+    ["path", { d: "m7 9 3 3-3 3M13 15h4" }]
+  ],
+  appsec: [
+    ["rect", { x: 5, y: 10, width: 14, height: 10, rx: 2 }],
+    ["path", { d: "M8 10V7a4 4 0 0 1 8 0v3M12 14v2" }]
+  ],
+  osint: [
+    ["circle", { cx: 10.5, cy: 10.5, r: 6.5 }],
+    ["path", { d: "m15.5 15.5 5 5M10.5 7.5v6M7.5 10.5h6" }]
+  ],
+  ctf: [
+    ["path", { d: "M5 22V3M5 4h12l-2.5 4L17 12H5" }]
+  ],
+  programacao: [
+    ["path", { d: "m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14" }]
+  ]
+};
 const studyGraphState = {
   selectedAreaId: "",
   previewAreaId: "",
@@ -643,15 +678,35 @@ function createStudyGraphLine(link) {
   return line;
 }
 
-function appendSvgText(parent, className, text, y) {
-  const textElement = createSvgElement("text", className);
+function appendStudyGraphIcon(parent, node) {
+  if (node.type === "root") {
+    const logo = createSvgElement("image", "study-node-logo");
 
-  textElement.textContent = text;
-  textElement.setAttribute("text-anchor", "middle");
-  textElement.setAttribute("y", String(y));
-  parent.appendChild(textElement);
+    logo.setAttribute("href", "assets/k0sec-symbol.webp");
+    logo.setAttribute("x", "-24");
+    logo.setAttribute("y", "-24");
+    logo.setAttribute("width", "48");
+    logo.setAttribute("height", "48");
+    logo.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    parent.appendChild(logo);
+    return;
+  }
 
-  return textElement;
+  if (node.type !== "area") return;
+
+  const icon = createSvgElement("g", "study-node-icon");
+  const iconParts = STUDY_GRAPH_ICONS[node.id] || STUDY_GRAPH_ICONS.programacao;
+
+  icon.setAttribute("transform", "translate(-12 -12)");
+  iconParts.forEach(([tagName, attributes]) => {
+    const part = createSvgElement(tagName, "study-node-icon-part");
+
+    Object.entries(attributes).forEach(([attribute, value]) => {
+      part.setAttribute(attribute, String(value));
+    });
+    icon.appendChild(part);
+  });
+  parent.appendChild(icon);
 }
 
 function createStudyGraphNode(node) {
@@ -665,6 +720,10 @@ function createStudyGraphNode(node) {
   group.setAttribute("tabindex", "0");
   group.setAttribute("aria-label", getStudyGraphNodeLabel(node));
 
+  const accessibleTitle = createSvgElement("title");
+  accessibleTitle.textContent = getStudyGraphNodeLabel(node);
+  group.appendChild(accessibleTitle);
+
   if (node.type === "area") {
     group.setAttribute("aria-pressed", "false");
     group.setAttribute("aria-expanded", "false");
@@ -672,17 +731,7 @@ function createStudyGraphNode(node) {
 
   circle.setAttribute("r", String(node.radius));
   group.appendChild(circle);
-
-  if (node.type === "root") {
-    appendSvgText(group, "study-node-code", STUDY_GRAPH_ROOT.code, -4);
-    appendSvgText(group, "study-node-title", STUDY_GRAPH_ROOT.description, 18);
-  } else if (node.type === "area") {
-    appendSvgText(group, "study-node-code", node.code, -3);
-    appendSvgText(group, "study-node-title", node.title, node.radius + 19);
-    appendSvgText(group, "study-node-index", node.index, -node.radius - 10);
-  } else {
-    appendSvgText(group, "study-node-title", node.title, node.radius + 16);
-  }
+  appendStudyGraphIcon(group, node);
 
   return group;
 }
@@ -690,11 +739,11 @@ function createStudyGraphNode(node) {
 function updateStudyGraphPanel() {
   if (!studyGraphPanel) return;
 
-  const selectedArea = getStudyArea(studyGraphState.selectedAreaId);
+  const activeArea = getStudyArea(getStudyGraphActiveAreaId());
 
   studyGraphPanel.replaceChildren();
 
-  if (!selectedArea) {
+  if (!activeArea) {
     studyGraphPanel.append(
       createElement("span", "study-panel-code", "K0Sec"),
       createElement("h3", "", "Cibersegurança em camadas."),
@@ -709,20 +758,22 @@ function updateStudyGraphPanel() {
     return;
   }
 
-  const code = createElement("span", "study-panel-code", `${selectedArea.index} ${selectedArea.code}`);
-  const title = createElement("h3", "", selectedArea.title);
-  const description = createElement("p", "", selectedArea.description);
+  const code = createElement("span", "study-panel-code", `${activeArea.index} ${activeArea.code}`);
+  const title = createElement("h3", "", activeArea.title);
+  const description = createElement("p", "", activeArea.description);
   const list = createElement("ul", "study-panel-list");
 
-  selectedArea.subareas.forEach((subarea) => {
+  activeArea.subareas.forEach((subarea) => {
     list.appendChild(createElement("li", "", subarea));
   });
 
   studyGraphPanel.append(code, title, description, list);
 
-  if (studyGraphClear) {
+  if (studyGraphClear && studyGraphState.selectedAreaId) {
     studyGraphClear.hidden = false;
     studyGraphPanel.appendChild(studyGraphClear);
+  } else if (studyGraphClear) {
+    studyGraphClear.hidden = true;
   }
 }
 
