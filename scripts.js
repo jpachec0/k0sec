@@ -109,6 +109,25 @@ const navMenu = document.querySelector(".nav-menu");
 const linkedElements = document.querySelectorAll("[data-link]");
 const revealElements = document.querySelectorAll(".reveal");
 const subtitleField = document.querySelector(".ambient-subtitle-field");
+const studyGraphRoot = document.querySelector("[data-study-graph]");
+const studyGraphFrame = document.querySelector("[data-study-graph-frame]");
+const studyGraphLines = document.querySelector("[data-study-graph-lines]");
+const studyGraphNodes = document.querySelector("[data-study-graph-nodes]");
+const studyGraphPanel = document.querySelector("[data-study-graph-panel]");
+const studyGraphClear = document.querySelector("[data-study-graph-clear]");
+const studyGraphText = document.querySelector("[data-study-graph-text]");
+const STUDY_GRAPH_AREAS = Array.isArray(window.K0SEC_STUDY_AREAS) ? window.K0SEC_STUDY_AREAS : [];
+const STUDY_GRAPH_ROOT = {
+  id: "k0sec-root",
+  title: "K0Sec",
+  code: "K0Sec",
+  description: "Cibersegurança"
+};
+const studyGraphState = {
+  selectedAreaId: "",
+  previewAreaId: "",
+  layoutFrame: null
+};
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
@@ -455,6 +474,366 @@ function startAmbientSubtitles() {
   scheduleNextAmbientSubtitle();
 }
 
+function sanitizeId(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function createElement(tagName, className, text) {
+  const element = document.createElement(tagName);
+
+  if (className) element.className = className;
+  if (text) element.textContent = text;
+
+  return element;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getStudyArea(areaId) {
+  return STUDY_GRAPH_AREAS.find((area) => area.id === areaId) ?? null;
+}
+
+function getStudyGraphActiveAreaId() {
+  return studyGraphState.previewAreaId || studyGraphState.selectedAreaId;
+}
+
+function setStudyNodePosition(element, node) {
+  element.style.setProperty("--node-x", `${node.x}px`);
+  element.style.setProperty("--node-y", `${node.y}px`);
+}
+
+function createStudyNodeButton(node) {
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.className = `study-node study-node-${node.type}`;
+  button.dataset.studyNode = node.id;
+  button.dataset.nodeType = node.type;
+
+  if (node.areaId) button.dataset.areaId = node.areaId;
+
+  setStudyNodePosition(button, node);
+
+  if (node.type === "root") {
+    button.setAttribute("aria-label", "Mostrar todas as áreas de estudo da K0Sec");
+    button.innerHTML = `
+      <span class="study-node-code">${STUDY_GRAPH_ROOT.code}</span>
+      <span class="study-node-title">${STUDY_GRAPH_ROOT.description}</span>
+    `;
+    return button;
+  }
+
+  if (node.type === "area") {
+    button.setAttribute("aria-label", `${node.index} ${node.code}, ${node.title}`);
+    button.setAttribute("aria-pressed", "false");
+    button.setAttribute("aria-expanded", "false");
+    button.innerHTML = `
+      <span class="study-node-index">${node.index}</span>
+      <span class="study-node-code">${node.code}</span>
+      <span class="study-node-title">${node.title}</span>
+    `;
+    return button;
+  }
+
+  button.setAttribute("aria-label", `Subárea de ${node.areaTitle}: ${node.title}`);
+  button.innerHTML = `<span>${node.title}</span>`;
+
+  return button;
+}
+
+function createStudyGraphLine(link) {
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+
+  line.setAttribute("x1", String(link.source.x));
+  line.setAttribute("y1", String(link.source.y));
+  line.setAttribute("x2", String(link.target.x));
+  line.setAttribute("y2", String(link.target.y));
+  line.dataset.studyLine = `${link.source.id}:${link.target.id}`;
+  line.dataset.sourceId = link.source.id;
+  line.dataset.targetId = link.target.id;
+  line.dataset.areaId = link.areaId;
+  line.classList.add("study-graph-line", `study-line-${link.kind}`);
+
+  return line;
+}
+
+function getStudyGraphLayout(width, height) {
+  const compact = width < 720;
+  const centerX = width / 2;
+  const centerY = compact ? 68 : height * 0.49;
+  const nodes = [
+    {
+      ...STUDY_GRAPH_ROOT,
+      type: "root",
+      x: centerX,
+      y: centerY
+    }
+  ];
+  const links = [];
+  const marginX = compact ? 92 : 120;
+  const marginY = compact ? 42 : 58;
+
+  STUDY_GRAPH_AREAS.forEach((area, areaIndex) => {
+    const angle = -Math.PI / 2 + (areaIndex / STUDY_GRAPH_AREAS.length) * Math.PI * 2;
+    const areaNode = compact
+      ? {
+          ...area,
+          type: "area",
+          x: areaIndex % 2 === 0 ? width * 0.35 : width * 0.65,
+          y: 168 + areaIndex * 78
+        }
+      : {
+          ...area,
+          type: "area",
+          x: centerX + Math.cos(angle) * width * 0.31,
+          y: centerY + Math.sin(angle) * height * 0.3
+        };
+
+    areaNode.x = clamp(areaNode.x, marginX, width - marginX);
+    areaNode.y = clamp(areaNode.y, marginY, height - marginY);
+    nodes.push(areaNode);
+    links.push({
+      kind: "area",
+      source: nodes[0],
+      target: areaNode,
+      areaId: area.id
+    });
+
+    area.subareas.forEach((subarea, subareaIndex) => {
+      const subareaId = `${area.id}-${sanitizeId(subarea)}`;
+      const offsetIndex = subareaIndex - (area.subareas.length - 1) / 2;
+      const subareaAngle = compact ? Math.PI / 2 : angle + offsetIndex * 0.27;
+      const compactSide = areaIndex % 2 === 0 ? 1 : -1;
+      const tangentX = -Math.sin(angle);
+      const tangentY = Math.cos(angle);
+      const subareaNode = compact
+        ? {
+            id: subareaId,
+            type: "subarea",
+            areaId: area.id,
+            areaTitle: area.title,
+            title: subarea,
+            x: compactSide > 0 ? width * 0.72 : width * 0.28,
+            y: areaNode.y + (subareaIndex - (area.subareas.length - 1) / 2) * 32
+          }
+        : {
+            id: subareaId,
+            type: "subarea",
+            areaId: area.id,
+            areaTitle: area.title,
+            title: subarea,
+            x: areaNode.x + Math.cos(subareaAngle) * 118 + tangentX * offsetIndex * 104,
+            y: areaNode.y + Math.sin(subareaAngle) * 92 + tangentY * offsetIndex * 72
+          };
+
+      subareaNode.x = clamp(subareaNode.x, compact ? 76 : 78, width - (compact ? 76 : 78));
+      subareaNode.y = clamp(subareaNode.y, compact ? 116 : 48, height - 48);
+      nodes.push(subareaNode);
+      links.push({
+        kind: "subarea",
+        source: areaNode,
+        target: subareaNode,
+        areaId: area.id
+      });
+    });
+  });
+
+  return { nodes, links, width, height, compact };
+}
+
+function updateStudyGraphPanel() {
+  if (!studyGraphPanel) return;
+
+  const selectedArea = getStudyArea(studyGraphState.selectedAreaId);
+
+  studyGraphPanel.replaceChildren();
+
+  if (!selectedArea) {
+    studyGraphPanel.append(
+      createElement("span", "study-panel-code", "K0Sec"),
+      createElement("h3", "", "Cibersegurança em camadas."),
+      createElement(
+        "p",
+        "",
+        "Selecione uma área para destacar suas conexões, ver subáreas relacionadas e ler a descrição do caminho de estudo."
+      )
+    );
+
+    if (studyGraphClear) studyGraphClear.hidden = true;
+    return;
+  }
+
+  const code = createElement("span", "study-panel-code", `${selectedArea.index} ${selectedArea.code}`);
+  const title = createElement("h3", "", selectedArea.title);
+  const description = createElement("p", "", selectedArea.description);
+  const list = createElement("ul", "study-panel-list");
+
+  selectedArea.subareas.forEach((subarea) => {
+    list.appendChild(createElement("li", "", subarea));
+  });
+
+  studyGraphPanel.append(code, title, description, list);
+
+  if (studyGraphClear) {
+    studyGraphClear.hidden = false;
+    studyGraphPanel.appendChild(studyGraphClear);
+  }
+}
+
+function updateStudyGraphState() {
+  if (!studyGraphRoot) return;
+
+  const activeAreaId = getStudyGraphActiveAreaId();
+
+  studyGraphRoot.dataset.activeArea = activeAreaId;
+  studyGraphRoot.classList.toggle("has-active-area", Boolean(activeAreaId));
+
+  studyGraphRoot.querySelectorAll("[data-study-node]").forEach((node) => {
+    const nodeAreaId = node.dataset.areaId || "";
+    const isRoot = node.dataset.nodeType === "root";
+    const isActiveArea = node.dataset.studyNode === activeAreaId;
+    const isRelated = isRoot || nodeAreaId === activeAreaId || isActiveArea;
+    const selected = node.dataset.studyNode === studyGraphState.selectedAreaId;
+
+    node.classList.toggle("is-muted", Boolean(activeAreaId) && !isRelated);
+    node.classList.toggle("is-related", Boolean(activeAreaId) && isRelated);
+    node.classList.toggle("is-selected", selected);
+
+    if (node.dataset.nodeType === "area") {
+      node.setAttribute("aria-pressed", String(selected));
+      node.setAttribute("aria-expanded", String(selected));
+    }
+  });
+
+  studyGraphRoot.querySelectorAll("[data-study-line]").forEach((line) => {
+    const related = !activeAreaId || line.dataset.areaId === activeAreaId;
+
+    line.classList.toggle("is-muted", !related);
+    line.classList.toggle("is-related", related && Boolean(activeAreaId));
+  });
+
+  updateStudyGraphPanel();
+}
+
+function renderAccessibleStudyGraphText() {
+  if (!studyGraphText) return;
+
+  const heading = createElement("h3", "", "Representação textual das áreas de estudo");
+  const list = createElement("ul", "");
+
+  STUDY_GRAPH_AREAS.forEach((area) => {
+    const item = createElement("li", "");
+    const title = createElement("strong", "", `${area.index} ${area.code} ${area.title}: `);
+    const description = document.createTextNode(area.description);
+    const subareas = createElement("ul", "");
+
+    area.subareas.forEach((subarea) => {
+      subareas.appendChild(createElement("li", "", subarea));
+    });
+
+    item.append(title, description, subareas);
+    list.appendChild(item);
+  });
+
+  studyGraphText.replaceChildren(heading, list);
+}
+
+function renderStudyGraph() {
+  if (!studyGraphRoot || !studyGraphFrame || !studyGraphLines || !studyGraphNodes || !STUDY_GRAPH_AREAS.length) {
+    return;
+  }
+
+  const width = studyGraphFrame.clientWidth;
+  const height = studyGraphFrame.clientHeight;
+
+  if (!width || !height) return;
+
+  const layout = getStudyGraphLayout(width, height);
+
+  studyGraphState.layoutFrame = { width, height, compact: layout.compact };
+  studyGraphLines.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  studyGraphLines.replaceChildren(...layout.links.map(createStudyGraphLine));
+  studyGraphNodes.replaceChildren(...layout.nodes.map(createStudyNodeButton));
+  updateStudyGraphState();
+}
+
+function selectStudyArea(areaId) {
+  studyGraphState.selectedAreaId = studyGraphState.selectedAreaId === areaId ? "" : areaId;
+  studyGraphState.previewAreaId = "";
+  updateStudyGraphState();
+}
+
+function initStudyGraph() {
+  if (!studyGraphRoot || !STUDY_GRAPH_AREAS.length) return;
+
+  renderAccessibleStudyGraphText();
+  renderStudyGraph();
+
+  studyGraphRoot.addEventListener("pointerover", (event) => {
+    const node = event.target.closest("[data-study-node]");
+
+    if (!node || node.dataset.nodeType === "root") return;
+
+    studyGraphState.previewAreaId = node.dataset.areaId || node.dataset.studyNode;
+    updateStudyGraphState();
+  });
+
+  studyGraphRoot.addEventListener("pointerout", (event) => {
+    if (studyGraphRoot.contains(event.relatedTarget)) return;
+
+    studyGraphState.previewAreaId = "";
+    updateStudyGraphState();
+  });
+
+  studyGraphRoot.addEventListener("focusin", (event) => {
+    const node = event.target.closest("[data-study-node]");
+
+    if (!node || node.dataset.nodeType === "root") return;
+
+    studyGraphState.previewAreaId = node.dataset.areaId || node.dataset.studyNode;
+    updateStudyGraphState();
+  });
+
+  studyGraphRoot.addEventListener("focusout", (event) => {
+    if (studyGraphRoot.contains(event.relatedTarget)) return;
+
+    studyGraphState.previewAreaId = "";
+    updateStudyGraphState();
+  });
+
+  studyGraphRoot.addEventListener("click", (event) => {
+    const node = event.target.closest("[data-study-node]");
+
+    if (!node) return;
+
+    if (node.dataset.nodeType === "root") {
+      studyGraphState.selectedAreaId = "";
+      studyGraphState.previewAreaId = "";
+      updateStudyGraphState();
+      return;
+    }
+
+    selectStudyArea(node.dataset.areaId || node.dataset.studyNode);
+  });
+
+  studyGraphClear?.addEventListener("click", () => {
+    studyGraphState.selectedAreaId = "";
+    studyGraphState.previewAreaId = "";
+    updateStudyGraphState();
+  });
+
+  window.addEventListener("resize", () => {
+    window.requestAnimationFrame(renderStudyGraph);
+  });
+}
+
 linkedElements.forEach((element) => {
   const linkKey = element.dataset.link;
   const linkTarget = COMMUNITY_LINKS[linkKey];
@@ -497,4 +876,5 @@ const revealObserver = new IntersectionObserver(
 );
 
 revealElements.forEach((element) => revealObserver.observe(element));
+initStudyGraph();
 startAmbientSubtitles();
