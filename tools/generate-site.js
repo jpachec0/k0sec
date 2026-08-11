@@ -7,6 +7,39 @@ const SITE_ORIGIN = siteData.links.site;
 const SOCIAL_IMAGE_URL = `${SITE_ORIGIN}/assets/social-preview.webp`;
 const GENERATED_DATE = new Date().toISOString().slice(0, 10);
 
+function renderSectionHeading({ index, title, description = "", id }) {
+  return `<header class="editorial-heading">
+    <span class="editorial-index">${escapeHtml(index)}</span>
+    <div>
+      <h2 id="${escapeHtml(id)}">${escapeHtml(title)}</h2>
+      ${description ? `<p>${escapeHtml(description)}</p>` : ""}
+    </div>
+  </header>`;
+}
+
+function renderStepList(items, className = "step-list") {
+  return `<ol class="${className}">
+    ${items.map((item, index) => `<li>
+      <span>${String(index + 1).padStart(2, "0")}</span>
+      <div><strong>${escapeHtml(item.title)}</strong>${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}</div>
+    </li>`).join("\n")}
+  </ol>`;
+}
+
+function renderCommunityCta() {
+  return `<section class="community-cta" aria-labelledby="community-cta-title">
+    <div>
+      <span class="editorial-index">COMUNIDADE // ACESSO ABERTO</span>
+      <h2 id="community-cta-title">Estude junto com a comunidade.</h2>
+      <p>Compartilhe dúvidas, acompanhe outras pessoas e participe no seu ritmo.</p>
+    </div>
+    <div class="cta-group">
+      <a class="button button-primary" href="${siteData.links.discord}">Entrar no Discord <span aria-hidden="true">→</span></a>
+      <a class="text-link" href="/comunidade/">Conhecer a comunidade <span aria-hidden="true">→</span></a>
+    </div>
+  </section>`;
+}
+
 const staticPages = [
   {
     path: "/sobre/",
@@ -16,21 +49,40 @@ const staticPages = [
     heading: "Conhecimento aberto, prática responsável.",
     lead: "A K0Sec é uma comunidade independente do interior de São Paulo dedicada ao aprendizado de cibersegurança e educação tecnológica.",
     content: `
-      <section class="article-section" aria-labelledby="sobre-proposito">
-        <h2 id="sobre-proposito">Por que a comunidade existe</h2>
-        <p>A comunidade foi criada para conectar estudantes, iniciantes, desenvolvedores e pessoas interessadas em segurança digital. O objetivo é facilitar o acesso a caminhos de estudo, projetos e discussões técnicas sem criar barreiras desnecessárias para começar.</p>
-      </section>
-      <section class="article-section" aria-labelledby="sobre-alcance">
-        <h2 id="sobre-alcance">Regional e online</h2>
-        <p>A atuação regional envolve principalmente Fernandópolis, Votuporanga, São José do Rio Preto e cidades próximas. A participação permanece aberta pela internet para pessoas de qualquer lugar.</p>
-      </section>
-      <section class="article-section" aria-labelledby="sobre-principios">
-        <h2 id="sobre-principios">Aprender, explorar e compartilhar</h2>
-        <p>A K0Sec organiza conhecimento, incentiva experiências em ambientes autorizados e promove colaboração aberta. Toda prática deve respeitar limites éticos, legais e a privacidade de outras pessoas.</p>
-        <div class="inline-links">
-          <a href="/areas/">Explorar áreas de estudo</a>
-          <a href="/comunidade/">Conhecer a comunidade</a>
+      <section class="editorial-section" aria-labelledby="sobre-quem">
+        ${renderSectionHeading({ index: "01 / IDENTIDADE", title: "Quem é a K0Sec.", id: "sobre-quem" })}
+        <div class="split-copy">
+          <p class="lead-copy">Uma comunidade para conectar estudantes, iniciantes, desenvolvedores e pessoas interessadas em segurança digital.</p>
+          <p>O objetivo é facilitar o acesso a caminhos de estudo, projetos e discussões técnicas sem criar barreiras desnecessárias para começar.</p>
         </div>
+      </section>
+      <section class="editorial-section" aria-labelledby="sobre-pilares">
+        ${renderSectionHeading({ index: "02 / PILARES", title: "Aprender, explorar e compartilhar.", id: "sobre-pilares" })}
+        <div class="pillar-grid">
+          <article><span>01</span><h3>Aprender</h3><p>Organizar fundamentos, referências e caminhos de estudo acessíveis a diferentes níveis.</p></article>
+          <article><span>02</span><h3>Explorar</h3><p>Transformar teoria em experiência dentro de laboratórios e ambientes autorizados.</p></article>
+          <article><span>03</span><h3>Compartilhar</h3><p>Construir materiais e projetos com revisão, diálogo e colaboração aberta.</p></article>
+        </div>
+      </section>
+      <section class="editorial-section" aria-labelledby="sobre-atuacao">
+        ${renderSectionHeading({ index: "03 / ATUAÇÃO", title: "Regional por origem. Online por escolha.", id: "sobre-atuacao" })}
+        <div class="overview-grid">
+          <article class="overview-item"><span class="item-label">REGIÃO</span><h3>Interior de São Paulo</h3><p>A atuação regional envolve principalmente Fernandópolis, Votuporanga, São José do Rio Preto e cidades próximas.</p></article>
+          <article class="overview-item"><span class="item-label">ALCANCE</span><h3>Participação aberta</h3><p>As atividades e os repositórios permanecem acessíveis pela internet para pessoas de qualquer lugar.</p></article>
+        </div>
+      </section>
+      <section class="editorial-section" aria-labelledby="sobre-principios">
+        ${renderSectionHeading({ index: "04 / PRINCÍPIOS", title: "Limites claros para evoluir com confiança.", id: "sobre-principios" })}
+        <ul class="principle-lines">
+          <li><strong>Conhecimento aberto</strong><span>Materiais públicos, revisáveis e acessíveis.</span></li>
+          <li><strong>Prática responsável</strong><span>Somente em ambientes próprios, controlados ou autorizados.</span></li>
+          <li><strong>Colaboração</strong><span>Dúvidas, revisões e contribuições fazem parte do aprendizado.</span></li>
+          <li><strong>Ética</strong><span>Respeito à lei, à privacidade e às outras pessoas.</span></li>
+        </ul>
+      </section>
+      <section class="page-cta page-cta-editorial" aria-label="Explorar a K0Sec">
+        <div><span class="editorial-index">PRÓXIMO PASSO</span><h2>Conheça os caminhos da comunidade.</h2></div>
+        <div class="cta-group"><a class="button button-primary" href="/areas/">Explorar áreas</a><a class="button button-secondary" href="/comunidade/">Conhecer a comunidade</a></div>
       </section>`
   },
   {
@@ -41,23 +93,33 @@ const staticPages = [
     heading: "Um espaço para começar e evoluir junto.",
     lead: "A participação é aberta para iniciantes, estudantes e pessoas que estudam tecnologia individualmente e procuram uma comunidade.",
     content: `
-      <section class="article-section" aria-labelledby="comunidade-comecar">
-        <h2 id="comunidade-comecar">Como começar</h2>
-        <ol class="numbered-flow">
-          <li>Entre no Discord oficial.</li>
-          <li>Leia as regras e o código de conduta.</li>
-          <li>Escolha uma área ou uma trilha inicial.</li>
-          <li>Participe de dúvidas, estudos e projetos quando se sentir confortável.</li>
-        </ol>
+      <section class="editorial-section" aria-labelledby="comunidade-comecar">
+        ${renderSectionHeading({ index: "01 / ENTRADA", title: "Como entrar.", description: "Quatro passos para chegar, entender o espaço e encontrar seu caminho.", id: "comunidade-comecar" })}
+        ${renderStepList([
+          { title: "Entre no Discord", description: "Use o convite oficial da K0Sec." },
+          { title: "Leia as regras", description: "Conheça o código de conduta e os limites da comunidade." },
+          { title: "Escolha uma área", description: "Explore os temas ou comece pela trilha inicial." },
+          { title: "Participe no seu ritmo", description: "Faça perguntas, compartilhe estudos e acompanhe projetos." }
+        ])}
       </section>
-      <section class="article-section" aria-labelledby="comunidade-participar">
-        <h2 id="comunidade-participar">Formas de participar</h2>
-        <p>Você pode estudar materiais, sugerir melhorias, revisar documentação, compartilhar aprendizados, propor atividades e contribuir com os repositórios públicos. Não é necessário ter experiência ou certificação.</p>
+      <section class="editorial-section" aria-labelledby="comunidade-participar">
+        ${renderSectionHeading({ index: "02 / PARTICIPAÇÃO", title: "O que você pode fazer.", id: "comunidade-participar" })}
+        <ul class="action-directory">
+          <li><strong>Estudar</strong><span>Use trilhas, materiais e áreas para organizar o aprendizado.</span></li>
+          <li><strong>Perguntar</strong><span>Compartilhe dúvidas sem precisar dominar o assunto.</span></li>
+          <li><strong>Contribuir</strong><span>Revise documentação, sugira melhorias e participe dos repositórios.</span></li>
+          <li><strong>Construir</strong><span>Participe de projetos e atividades quando houver uma proposta aberta.</span></li>
+        </ul>
       </section>
-      <section class="page-cta" aria-label="Entrar na comunidade">
-        <p>Leia as regras, apresente-se e encontre pessoas estudando os mesmos temas.</p>
-        <a class="button button-primary" href="${siteData.links.discord}">Entrar no Discord</a>
-      </section>`
+      <section class="editorial-section" aria-labelledby="comunidade-onde">
+        ${renderSectionHeading({ index: "03 / CANAIS", title: "Onde a comunidade acontece.", id: "comunidade-onde" })}
+        <div class="channel-grid">
+          <a href="${siteData.links.discord}"><span>CONVERSAS</span><strong>Discord</strong><p>Dúvidas, estudos, atividades e interação entre membros.</p><small>Abrir canal <span aria-hidden="true">→</span></small></a>
+          <a href="${siteData.links.github}"><span>CONSTRUÇÃO</span><strong>GitHub</strong><p>Documentação, trilhas, laboratórios e projetos abertos.</p><small>Ver organização <span aria-hidden="true">→</span></small></a>
+          <a href="${siteData.links.instagram}"><span>ATUALIZAÇÕES</span><strong>Instagram</strong><p>Comunicação pública e novidades da comunidade.</p><small>Acompanhar <span aria-hidden="true">→</span></small></a>
+        </div>
+      </section>
+      ${renderCommunityCta()}`
   },
   {
     path: "/trilhas/",
@@ -67,26 +129,26 @@ const staticPages = [
     heading: "Um caminho possível para começar.",
     lead: "As trilhas abertas da K0Sec ajudam iniciantes a organizar fundamentos antes de escolher uma especialização.",
     content: `
-      <section class="article-section" aria-labelledby="trilhas-progressao">
-        <h2 id="trilhas-progressao">Progressão recomendada</h2>
-        <ol class="learning-sequence">
-          <li>Como começar</li>
-          <li>Fundamentos de TI</li>
-          <li>Redes</li>
-          <li>Linux</li>
-          <li>Git e GitHub</li>
-          <li>Fundamentos de cibersegurança</li>
-          <li>Laboratórios</li>
-          <li>Escolha de especialização</li>
-        </ol>
+      <section class="editorial-section" aria-labelledby="trilhas-progressao">
+        ${renderSectionHeading({ index: "01 / PROGRESSÃO", title: "Uma base antes da especialização.", description: "A sequência organiza fundamentos, prática autorizada e escolha consciente de uma área.", id: "trilhas-progressao" })}
+        ${renderStepList([
+          { title: "Como começar", description: "Organize objetivos, rotina e ambiente de estudo." },
+          { title: "Fundamentos de TI", description: "Construa a base para compreender sistemas e aplicações." },
+          { title: "Redes", description: "Entenda como dispositivos e serviços se comunicam." },
+          { title: "Linux", description: "Ganhe autonomia no sistema e no terminal." },
+          { title: "Git e GitHub", description: "Registre evolução e colabore em projetos abertos." },
+          { title: "Fundamentos de cibersegurança", description: "Conecte riscos, controles, ética e responsabilidade." },
+          { title: "Laboratórios", description: "Pratique somente em ambientes próprios ou autorizados." },
+          { title: "Escolha de especialização", description: "Explore as áreas e aprofunde o caminho mais relevante para você." }
+        ], "learning-path")}
       </section>
-      <section class="article-section" aria-labelledby="trilhas-uso">
-        <h2 id="trilhas-uso">Como usar</h2>
-        <p>A sequência é uma orientação, não uma regra rígida. Registre dúvidas, pratique somente em ambientes autorizados e use o Discord para compartilhar seu progresso.</p>
-        <div class="inline-links">
-          <a href="${siteData.links.learningPathsRepository}">Abrir trilhas no GitHub</a>
-          <a href="/areas/">Escolher uma área</a>
+      <section class="editorial-section" aria-labelledby="trilhas-uso">
+        ${renderSectionHeading({ index: "02 / COMO USAR", title: "Avance no seu ritmo.", id: "trilhas-uso" })}
+        <div class="split-copy">
+          <p class="lead-copy">A sequência é uma orientação, não uma regra rígida.</p>
+          <p>Registre dúvidas, retome fundamentos quando necessário e pratique somente em ambientes autorizados. Depois, use o mapa de áreas para escolher uma especialização.</p>
         </div>
+        <div class="cta-group section-actions"><a class="button button-primary" href="${siteData.links.learningPathsRepository}">Abrir trilhas no GitHub</a><a class="button button-secondary" href="/areas/">Escolher uma área</a></div>
       </section>`
   },
   {
@@ -97,18 +159,31 @@ const staticPages = [
     heading: "Guias que crescem com revisão comunitária.",
     lead: "A biblioteca de guias está sendo estruturada para receber conteúdos curtos, verificáveis e úteis para quem está começando.",
     content: `
-      <section class="article-section" aria-labelledby="guias-estado">
-        <h2 id="guias-estado">Conteúdo em preparação</h2>
-        <p>Os guias serão publicados conforme o conteúdo for escrito e revisado. A K0Sec não publica páginas artificiais apenas para preencher o catálogo.</p>
-      </section>
-      <section class="article-section" aria-labelledby="guias-enquanto">
-        <h2 id="guias-enquanto">Onde estudar agora</h2>
-        <p>Use o mapa de áreas para entender especializações ou siga a progressão recomendada nas trilhas públicas da comunidade.</p>
-        <div class="inline-links">
-          <a href="/areas/">Áreas da cibersegurança</a>
-          <a href="/trilhas/">Trilhas para iniciantes</a>
-          <a href="/materiais/">Materiais públicos</a>
+      <section class="editorial-section" aria-labelledby="guias-processo">
+        ${renderSectionHeading({ index: "01 / PROCESSO", title: "Como funcionam os guias.", id: "guias-processo" })}
+        <div class="overview-grid">
+          <article class="overview-item"><span class="item-label">ESCRITA</span><h3>Conteúdo objetivo</h3><p>Guias devem resolver uma dúvida real com linguagem clara e referências verificáveis.</p></article>
+          <article class="overview-item"><span class="item-label">REVISÃO</span><h3>Construção comunitária</h3><p>Correções e melhorias podem ser propostas publicamente antes da publicação.</p></article>
         </div>
+      </section>
+      <section class="editorial-section" aria-labelledby="guias-explorar">
+        ${renderSectionHeading({ index: "02 / EXPLORAR", title: "Conhecimento disponível agora.", id: "guias-explorar" })}
+        <nav class="navigation-directory" aria-label="Outros caminhos de estudo">
+          <a href="/areas/"><span>01</span><div><strong>Áreas da cibersegurança</strong><small>Conheça especializações e assuntos relacionados.</small></div><b aria-hidden="true">→</b></a>
+          <a href="/trilhas/"><span>02</span><div><strong>Trilhas para iniciantes</strong><small>Organize fundamentos antes de escolher uma área.</small></div><b aria-hidden="true">→</b></a>
+          <a href="/materiais/"><span>03</span><div><strong>Materiais públicos</strong><small>Acesse os repositórios de trilhas e laboratórios.</small></div><b aria-hidden="true">→</b></a>
+        </nav>
+      </section>
+      <section class="editorial-section" aria-labelledby="guias-publicados">
+        ${renderSectionHeading({ index: "03 / BIBLIOTECA", title: "Conteúdos publicados.", id: "guias-publicados" })}
+        <div class="compact-empty-state">
+          <span aria-hidden="true">00</span>
+          <div><strong>A biblioteca ainda não possui guias publicados.</strong><p>Enquanto a revisão editorial é estruturada, use as áreas, trilhas e materiais públicos para continuar estudando.</p></div>
+        </div>
+      </section>
+      <section class="page-cta page-cta-editorial" aria-label="Contribuir com os guias">
+        <div><span class="editorial-index">CONTRIBUIÇÃO</span><h2>Pretende ajudar a construir um guia?</h2></div>
+        <a class="button button-primary" href="/contribuir/">Ver como contribuir</a>
       </section>`
   },
   {
@@ -137,16 +212,19 @@ const staticPages = [
     heading: "Construído de forma aberta.",
     lead: "O ecossistema público da K0Sec separa governança, aprendizado, laboratórios e presença oficial em repositórios próprios.",
     content: `
-      <section class="resource-list" aria-label="Projetos oficiais da K0Sec">
-        <a href="${siteData.links.siteRepository}"><strong>Site oficial</strong><span>Arquitetura pública, interface, SEO e documentação do site.</span></a>
-        <a href="${siteData.links.communityRepository}"><strong>Community</strong><span>Governança, participação, eventos e documentação comunitária.</span></a>
-        <a href="${siteData.links.learningPathsRepository}"><strong>Learning Paths</strong><span>Trilhas abertas de tecnologia e cibersegurança.</span></a>
-        <a href="${siteData.links.labsRepository}"><strong>Labs</strong><span>Laboratórios educacionais seguros e autorizados.</span></a>
+      <section class="editorial-section" aria-labelledby="projetos-repositorios">
+        ${renderSectionHeading({ index: "01 / REPOSITÓRIOS", title: "Quatro frentes, um ecossistema.", id: "projetos-repositorios" })}
+        <div class="repository-grid">
+          <a href="${siteData.links.siteRepository}"><span>WEB / OFICIAL</span><strong>k0sec</strong><p>Arquitetura pública, interface, SEO e documentação do site oficial.</p><small>Abrir no GitHub <span aria-hidden="true">→</span></small></a>
+          <a href="${siteData.links.communityRepository}"><span>COMUNIDADE / GOVERNANÇA</span><strong>community</strong><p>Participação, eventos e documentação comunitária.</p><small>Abrir no GitHub <span aria-hidden="true">→</span></small></a>
+          <a href="${siteData.links.learningPathsRepository}"><span>EDUCAÇÃO / TRILHAS</span><strong>learning-paths</strong><p>Trilhas abertas de tecnologia e cibersegurança.</p><small>Abrir no GitHub <span aria-hidden="true">→</span></small></a>
+          <a href="${siteData.links.labsRepository}"><span>PRÁTICA / LABORATÓRIOS</span><strong>labs</strong><p>Laboratórios educacionais seguros e autorizados.</p><small>Abrir no GitHub <span aria-hidden="true">→</span></small></a>
+        </div>
       </section>
-      <section class="article-section" aria-labelledby="projetos-contribuir">
-        <h2 id="projetos-contribuir">Contribuição pública</h2>
-        <p>Issues e Pull Requests podem registrar correções, sugestões e melhorias reais. Consulte o guia de contribuição de cada repositório antes de enviar mudanças.</p>
-        <a class="text-link" href="/contribuir/">Como contribuir</a>
+      <section class="editorial-section" aria-labelledby="projetos-contribuir">
+        ${renderSectionHeading({ index: "02 / PARTICIPAÇÃO", title: "Como contribuir.", id: "projetos-contribuir" })}
+        <div class="split-copy"><p class="lead-copy">Issues e Pull Requests registram correções, sugestões e melhorias reais.</p><p>Consulte o guia de contribuição de cada repositório, escolha uma alteração pequena e abra a proposta para revisão da comunidade.</p></div>
+        <div class="cta-group section-actions"><a class="button button-primary" href="/contribuir/">Ver formas de contribuir</a><a class="text-link" href="${siteData.links.github}">Abrir organização <span aria-hidden="true">→</span></a></div>
       </section>`
   },
   {
@@ -181,22 +259,33 @@ const staticPages = [
     heading: "Toda melhoria útil pode começar pequena.",
     lead: "Contribuições podem envolver documentação, sugestões, revisão, acessibilidade, materiais, laboratórios ou desenvolvimento.",
     content: `
-      <section class="article-section" aria-labelledby="contribuir-fluxo">
-        <h2 id="contribuir-fluxo">Fluxo recomendado</h2>
-        <ol class="numbered-flow">
-          <li>Escolha o repositório relacionado à contribuição.</li>
-          <li>Leia o guia de contribuição e o código de conduta.</li>
-          <li>Crie uma branch a partir de <code>develop</code>.</li>
-          <li>Faça uma alteração pequena, documentada e verificável.</li>
-          <li>Abra uma Pull Request para <code>develop</code>.</li>
-        </ol>
+      <section class="editorial-section" aria-labelledby="contribuir-formas">
+        ${renderSectionHeading({ index: "01 / FORMAS", title: "Onde sua contribuição pode ajudar.", id: "contribuir-formas" })}
+        <ul class="contribution-grid">
+          <li><span>01</span><strong>Documentação</strong><small>Clareza, ortografia e organização.</small></li>
+          <li><span>02</span><strong>Código</strong><small>Correções e melhorias verificáveis.</small></li>
+          <li><span>03</span><strong>Materiais</strong><small>Referências e caminhos de estudo.</small></li>
+          <li><span>04</span><strong>Revisão</strong><small>Feedback técnico e editorial.</small></li>
+          <li><span>05</span><strong>Acessibilidade</strong><small>Navegação e leitura para mais pessoas.</small></li>
+          <li><span>06</span><strong>Laboratórios</strong><small>Práticas seguras e autorizadas.</small></li>
+        </ul>
       </section>
-      <section class="article-section" aria-labelledby="contribuir-iniciantes">
-        <h2 id="contribuir-iniciantes">Iniciantes são bem-vindos</h2>
-        <p>Corrigir uma explicação, apontar um link quebrado ou melhorar a acessibilidade também são contribuições técnicas relevantes.</p>
-        <div class="inline-links">
-          <a href="${siteData.links.github}">Organização no GitHub</a>
-          <a href="${siteData.links.discord}">Conversar no Discord</a>
+      <section class="editorial-section" aria-labelledby="contribuir-fluxo">
+        ${renderSectionHeading({ index: "02 / FLUXO", title: "Do primeiro ajuste à revisão.", id: "contribuir-fluxo" })}
+        ${renderStepList([
+          { title: "Escolha", description: "Encontre o repositório relacionado à contribuição." },
+          { title: "Leia a documentação", description: "Consulte o guia de contribuição e o código de conduta." },
+          { title: "Crie uma branch", description: "Parta de develop e mantenha um escopo claro." },
+          { title: "Faça a alteração", description: "Documente e verifique o que foi modificado." },
+          { title: "Abra uma Pull Request", description: "Envie a proposta para develop e aguarde a revisão." }
+        ])}
+      </section>
+      <section class="editorial-section" aria-labelledby="contribuir-primeira">
+        ${renderSectionHeading({ index: "03 / PRIMEIRA CONTRIBUIÇÃO", title: "Começar pequeno continua sendo começar.", id: "contribuir-primeira" })}
+        <div class="split-copy"><p class="lead-copy">Iniciantes são bem-vindos.</p><p>Corrigir uma explicação, apontar um link quebrado ou melhorar a acessibilidade também são contribuições técnicas relevantes.</p></div>
+        <div class="cta-group section-actions">
+          <a class="button button-primary" href="${siteData.links.github}">Abrir GitHub</a>
+          <a class="button button-secondary" href="${siteData.links.discord}">Conversar no Discord</a>
         </div>
       </section>`
   },
@@ -335,11 +424,14 @@ function renderBreadcrumbs(items) {
     </nav>`;
 }
 
-function renderPage({ path, title, description, eyebrow, heading, lead, content, breadcrumbs }) {
+function renderPage({ path, title, description, eyebrow, heading, lead, content, breadcrumbs, heroMeta = [] }) {
   const breadcrumbItems = breadcrumbs || [
     { name: "K0Sec", path: "/" },
     { name: heading, path }
   ];
+  const heroMetaMarkup = heroMeta.length
+    ? `\n          <ul class="hero-meta" aria-label="Resumo da página">${heroMeta.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -358,7 +450,7 @@ function renderPage({ path, title, description, eyebrow, heading, lead, content,
         <header class="internal-hero">
           <span class="section-kicker">${escapeHtml(eyebrow)}</span>
           <h1>${escapeHtml(heading)}</h1>
-          <p>${escapeHtml(lead)}</p>
+          <p>${escapeHtml(lead)}</p>${heroMetaMarkup}
         </header>
         <div class="article-layout">${content}</div>
       </div>
@@ -375,15 +467,15 @@ function renderAreasIndex() {
     { name: "K0Sec", path: "/" },
     { name: "Áreas", path }
   ];
+  const mapNodes = siteData.areas.map((area) => `<a href="/areas/${area.slug}/"><span>${area.index} / ${area.code}</span><strong>${escapeHtml(area.title)}</strong></a>`).join("\n");
   const branches = siteData.areas.map((area) => `
-    <section class="knowledge-branch" aria-labelledby="area-${area.slug}">
-      <span class="knowledge-code">${area.index} ${area.code}</span>
-      <h2 id="area-${area.slug}"><a href="/areas/${area.slug}/">${escapeHtml(area.title)}</a></h2>
+    <article class="area-directory-item">
+      <span class="knowledge-code">${area.index} / ${area.code}</span>
+      <h3><a href="/areas/${area.slug}/">${escapeHtml(area.title)}</a></h3>
       <p>${escapeHtml(area.description)}</p>
-      <ul>
-        ${area.subareas.map((subarea) => `<li><a href="/areas/${area.slug}/${subarea.slug}/">${escapeHtml(subarea.title)}</a></li>`).join("\n")}
-      </ul>
-    </section>`).join("\n");
+      <div class="area-directory-meta"><span>${area.subareas.length} subáreas</span><span>${escapeHtml(area.semanticLabel)}</span></div>
+      <a class="text-link" href="/areas/${area.slug}/">Explorar área <span aria-hidden="true">→</span></a>
+    </article>`).join("\n");
 
   return renderPage({
     path,
@@ -394,16 +486,20 @@ function renderAreasIndex() {
     lead: "Explore relações entre áreas e subáreas, abra um caminho específico e encontre conexões com trilhas, materiais e projetos.",
     breadcrumbs,
     content: `
-      <section class="knowledge-map" aria-label="Mapa completo das áreas de estudo">
-        <header class="knowledge-root">
+      <section class="area-overview-map" aria-labelledby="area-map-title">
+        <header class="area-map-root">
           <img src="/assets/k0sec-symbol.webp" alt="" width="64" height="64" loading="lazy" decoding="async">
-          <div><span>K0Sec</span><strong>Cibersegurança</strong></div>
+          <div><span>K0Sec // MAPA</span><h2 id="area-map-title">Cibersegurança</h2><p>Oito áreas conectadas por fundamentos e prática responsável.</p></div>
         </header>
-        <div class="knowledge-grid">${branches}</div>
+        <nav class="area-map-nodes" aria-label="Navegar pelo mapa de áreas">${mapNodes}</nav>
       </section>
-      <section class="page-cta" aria-label="Próximo passo">
-        <p>Não sabe qual caminho escolher? Comece pelos fundamentos e avance no seu ritmo.</p>
-        <a class="button button-secondary" href="/trilhas/">Ver trilhas para iniciantes</a>
+      <section class="editorial-section" aria-labelledby="areas-explorar">
+        ${renderSectionHeading({ index: "02 / DIRETÓRIO", title: "Explorar por área.", description: "Escolha um caminho para ver contexto, subáreas, conexões e próximos passos.", id: "areas-explorar" })}
+        <div class="area-directory-grid">${branches}</div>
+      </section>
+      <section class="page-cta page-cta-editorial" aria-label="Próximo passo">
+        <div><span class="editorial-index">NÃO SABE POR ONDE COMEÇAR?</span><h2>Construa a base antes de escolher.</h2><p>Use a progressão recomendada para organizar fundamentos e avançar no seu ritmo.</p></div>
+        <a class="button button-primary" href="/trilhas/">Ver trilhas para iniciantes</a>
       </section>`
   });
 }
@@ -427,28 +523,45 @@ function renderAreaPage(area) {
     heading: area.title,
     lead: area.description,
     breadcrumbs,
+    heroMeta: [area.semanticLabel, `${area.subareas.length} subáreas`],
     content: `
-      <section class="article-section" aria-labelledby="objetivo-${area.slug}">
-        <h2 id="objetivo-${area.slug}">Objetivo desta área</h2>
-        <p>Organizar fundamentos e práticas relacionadas a ${escapeHtml(area.title)}, conectando estudo conceitual, documentação e experiências realizadas somente em ambientes próprios ou autorizados.</p>
-      </section>
-      <section class="article-section" aria-labelledby="subareas-${area.slug}">
-        <h2 id="subareas-${area.slug}">Subáreas</h2>
-        <nav class="topic-links" aria-label="Subáreas de ${escapeHtml(area.title)}">
-          ${area.subareas.map((subarea) => `<a href="/areas/${area.slug}/${subarea.slug}/">${escapeHtml(subarea.title)}</a>`).join("\n")}
-        </nav>
-      </section>
-      <section class="article-section" aria-labelledby="relacoes-${area.slug}">
-        <h2 id="relacoes-${area.slug}">Áreas relacionadas</h2>
-        <div class="inline-links">
-          ${relatedAreas.map((relatedArea) => `<a href="/areas/${relatedArea.slug}/">${escapeHtml(relatedArea.title)}</a>`).join("\n")}
+      <section class="editorial-section" aria-labelledby="visao-${area.slug}">
+        ${renderSectionHeading({ index: "01 / VISÃO GERAL", title: `Entenda ${area.title}.`, id: `visao-${area.slug}` })}
+        <div class="overview-grid">
+          <article class="overview-item"><span class="item-label">O QUE É</span><h3>${escapeHtml(area.semanticLabel)}</h3><p>${escapeHtml(area.description)}</p></article>
+          <article class="overview-item"><span class="item-label">OBJETIVO</span><h3>O que este caminho desenvolve</h3><p>${escapeHtml(area.objective)}</p></article>
         </div>
       </section>
-      <section class="page-cta" aria-label="Continuar estudando">
-        <p>Use as trilhas para organizar fundamentos ou participe das discussões da comunidade.</p>
-        <a class="button button-secondary" href="/trilhas/">Ver trilhas</a>
-        <a class="button button-primary" href="${siteData.links.discord}">Entrar no Discord</a>
-      </section>`
+      <section class="editorial-section" aria-labelledby="subareas-${area.slug}">
+        ${renderSectionHeading({ index: "02 / CAMINHOS", title: "Subáreas para explorar.", description: `Os assuntos que formam o mapa inicial de ${area.title}.`, id: `subareas-${area.slug}` })}
+        <div class="path-grid">
+          ${area.subareas.map((subarea, index) => `<a class="path-item" href="/areas/${area.slug}/${subarea.slug}/"><span>${String(index + 1).padStart(2, "0")}</span><div><h3>${escapeHtml(subarea.title)}</h3><p>${escapeHtml(subarea.summary)}</p><small>Explorar <b aria-hidden="true">→</b></small></div></a>`).join("\n")}
+        </div>
+      </section>
+      <section class="editorial-section" aria-labelledby="inicio-${area.slug}">
+        ${renderSectionHeading({ index: "03 / ORIENTAÇÃO", title: "Por onde começar.", id: `inicio-${area.slug}` })}
+        ${renderStepList([
+          { title: "Revise fundamentos", description: "Use as trilhas para identificar a base necessária." },
+          { title: `Entenda ${area.title}`, description: area.description },
+          { title: "Escolha uma subárea", description: "Aprofunde um assunto de cada vez e registre dúvidas." },
+          { title: "Pratique com autorização", description: "Utilize laboratórios controlados e documente o aprendizado." }
+        ], "orientation-path")}
+      </section>
+      <section class="editorial-section" aria-labelledby="relacoes-${area.slug}">
+        ${renderSectionHeading({ index: "04 / CONEXÕES", title: "Áreas relacionadas.", description: "Outros caminhos que compartilham fundamentos e práticas com esta área.", id: `relacoes-${area.slug}` })}
+        <div class="related-area-grid">
+          ${relatedAreas.map((relatedArea) => `<a href="/areas/${relatedArea.slug}/"><span>${relatedArea.index} / ${relatedArea.code}</span><h3>${escapeHtml(relatedArea.title)}</h3><p>${escapeHtml(relatedArea.description)}</p><small>Explorar <b aria-hidden="true">→</b></small></a>`).join("\n")}
+        </div>
+      </section>
+      <section class="continue-section" aria-labelledby="continuar-${area.slug}">
+        ${renderSectionHeading({ index: "05 / PRÓXIMO PASSO", title: "Continue estudando.", id: `continuar-${area.slug}` })}
+        <nav class="navigation-directory" aria-label="Recursos para continuar estudando">
+          <a href="/trilhas/"><span>01</span><div><strong>Trilhas</strong><small>Organize os fundamentos e a progressão de estudo.</small></div><b aria-hidden="true">→</b></a>
+          <a href="/materiais/"><span>02</span><div><strong>Materiais</strong><small>Acesse trilhas, documentação e laboratórios públicos.</small></div><b aria-hidden="true">→</b></a>
+          <a href="${siteData.links.labsRepository}"><span>03</span><div><strong>Laboratórios</strong><small>Consulte práticas educacionais seguras e autorizadas.</small></div><b aria-hidden="true">→</b></a>
+        </nav>
+      </section>
+      ${renderCommunityCta()}`
   });
 }
 
@@ -468,26 +581,38 @@ function renderSubareaPage(area, subarea) {
     description: `Conheça ${subarea.title} como parte dos estudos de ${area.title} da K0Sec, com contexto responsável e assuntos relacionados.`,
     eyebrow: area.title,
     heading: subarea.title,
-    lead: `${subarea.title} integra o caminho de estudos de ${area.title} na K0Sec.`,
+    lead: subarea.summary,
     breadcrumbs,
+    heroMeta: [`${area.index} / ${area.code}`, area.semanticLabel],
     content: `
-      <section class="article-section" aria-labelledby="contexto-${subarea.slug}">
-        <h2 id="contexto-${subarea.slug}">Contexto</h2>
-        <p>${escapeHtml(area.description)}</p>
-        <p>Esta página é o ponto de entrada para o tema e será ampliada conforme materiais revisados pela comunidade forem publicados.</p>
-        <a class="text-link" href="/areas/${area.slug}/">Voltar para ${escapeHtml(area.title)}</a>
+      <section class="editorial-section" aria-labelledby="encontrar-${subarea.slug}">
+        ${renderSectionHeading({ index: "01 / CONTEXTO", title: "O que você encontra aqui.", id: `encontrar-${subarea.slug}` })}
+        <div class="concept-grid">
+          <article><span>TEMA</span><h3>${escapeHtml(subarea.title)}</h3><p>${escapeHtml(subarea.summary)}</p></article>
+          <article><span>ÁREA</span><h3>${escapeHtml(area.title)}</h3><p>${escapeHtml(area.description)}</p></article>
+          <article><span>PRÁTICA</span><h3>Estudo responsável</h3><p>Conceitos e atividades devem ser aplicados somente em ambientes próprios, controlados ou explicitamente autorizados.</p></article>
+        </div>
       </section>
-      <section class="article-section" aria-labelledby="relacionados-${subarea.slug}">
-        <h2 id="relacionados-${subarea.slug}">Assuntos relacionados</h2>
-        <nav class="topic-links" aria-label="Outras subáreas de ${escapeHtml(area.title)}">
-          ${siblingSubareas.map((candidate) => `<a href="/areas/${area.slug}/${candidate.slug}/">${escapeHtml(candidate.title)}</a>`).join("\n")}
+      <section class="editorial-section" aria-labelledby="conexao-${subarea.slug}">
+        ${renderSectionHeading({ index: "02 / CONEXÃO", title: `Como isso se conecta a ${area.title}.`, id: `conexao-${subarea.slug}` })}
+        <div class="split-copy"><p class="lead-copy">${escapeHtml(subarea.title)} faz parte do caminho de ${escapeHtml(area.semanticLabel.toLowerCase())}.</p><p>${escapeHtml(area.objective)}</p></div>
+        <a class="text-link section-link" href="/areas/${area.slug}/">Ver visão completa de ${escapeHtml(area.title)} <span aria-hidden="true">→</span></a>
+      </section>
+      <section class="editorial-section" aria-labelledby="relacionados-${subarea.slug}">
+        ${renderSectionHeading({ index: "03 / ASSUNTOS", title: "Assuntos relacionados.", description: `Outras subáreas que compõem ${area.title}.`, id: `relacionados-${subarea.slug}` })}
+        <nav class="related-topic-list" aria-label="Outras subáreas de ${escapeHtml(area.title)}">
+          ${siblingSubareas.map((candidate, index) => `<a href="/areas/${area.slug}/${candidate.slug}/"><span>${String(index + 1).padStart(2, "0")}</span><div><strong>${escapeHtml(candidate.title)}</strong><small>${escapeHtml(candidate.summary)}</small></div><b aria-hidden="true">→</b></a>`).join("\n")}
         </nav>
       </section>
-      <section class="page-cta" aria-label="Recursos relacionados">
-        <p>Consulte materiais públicos ou siga uma trilha antes de avançar para práticas.</p>
-        <a class="button button-secondary" href="/materiais/">Ver materiais</a>
-        <a class="button button-secondary" href="/trilhas/">Ver trilhas</a>
-      </section>`
+      <section class="continue-section" aria-labelledby="continuar-${subarea.slug}">
+        ${renderSectionHeading({ index: "04 / PRÓXIMO PASSO", title: "Continue estudando.", id: `continuar-${subarea.slug}` })}
+        <div class="cta-group section-actions">
+          <a class="button button-primary" href="/materiais/">Ver materiais</a>
+          <a class="button button-secondary" href="/trilhas/">Ver trilhas</a>
+          <a class="text-link" href="/areas/${area.slug}/">Voltar para ${escapeHtml(area.title)} <span aria-hidden="true">→</span></a>
+        </div>
+      </section>
+      ${renderCommunityCta()}`
   });
 }
 
