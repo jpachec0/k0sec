@@ -203,6 +203,15 @@
           role="group"
           aria-label="Grafo interativo das áreas de estudo da K0Sec"
         >
+          <div class="study-graph-detail" data-study-graph-panel aria-live="polite">
+            <span class="study-panel-code">K0Sec // MAPA DE ESTUDOS</span>
+            <h3>Cibersegurança em camadas.</h3>
+            <p>Explore as conexões entre cada área e seus assuntos de estudo.</p>
+            <button class="study-clear-button" type="button" data-study-graph-clear hidden>
+              Ver todas as áreas
+            </button>
+          </div>
+
           <div class="study-graph-frame" data-study-graph-frame>
             <svg
               class="study-graph-canvas"
@@ -217,18 +226,6 @@
               <g class="study-graph-nodes" data-study-graph-nodes></g>
             </svg>
           </div>
-
-          <aside class="study-graph-panel" data-study-graph-panel aria-live="polite">
-            <span class="study-panel-code">K0Sec</span>
-            <h3>Cibersegurança em camadas.</h3>
-            <p>
-              Selecione uma área para destacar suas conexões, ver subáreas relacionadas e ler a
-              descrição do caminho de estudo.
-            </p>
-            <button class="study-clear-button" type="button" data-study-graph-clear hidden>
-              Ver todas as áreas
-            </button>
-          </aside>
 
           <div class="sr-only" data-study-graph-text></div>
         </div>
