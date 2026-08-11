@@ -32,7 +32,7 @@ Quando alterar responsividade, valide visualmente pelo menos:
 - HTML semântico e acessível.
 - CSS responsivo, organizado e sem `!important` desnecessário.
 - JavaScript simples, previsível e sem dependências desnecessárias.
-- Links externos centralizados em `scripts.js`, no objeto `COMMUNITY_LINKS`.
+- Links oficiais e dados das áreas centralizados em `site-data.js`.
 - Nenhuma senha, token, `.env` ou dado sensível no repositório.
 
 ## Commits

@@ -1,74 +1,64 @@
-# SEO e Presença em Buscadores
+# SEO e indexação
 
-Este documento resume a preparação de SEO do site da K0Sec.
+O domínio canônico do site é `https://k0sec.org`.
 
-## Arquivos
+## Arquitetura indexável
 
-- `index.html`: metatags principais, Open Graph, Twitter Cards, JSON-LD e links de ícones.
-- `manifest.webmanifest`: instalação em dispositivos e ícones PWA.
-- `robots.txt`: autorização de rastreamento e referência ao sitemap.
-- `sitemap.xml`: URL principal para buscadores.
-- `humans.txt`: informações públicas da comunidade.
+O site possui páginas institucionais para sobre, comunidade, trilhas, guias, materiais, projetos, eventos, contribuição e autores. A rota `/areas/` conecta oito áreas a páginas próprias e a páginas de subáreas.
 
-## Metadados Incluídos
+As rotas são HTML estático gerado por `tools/generate-site.js`. A fonte `site-data.js` mantém slugs, nomes, descrições e relações em um só lugar.
 
-- Title e description.
-- Meta de verificação do Google Search Console.
-- Robots, Googlebot e Bingbot.
-- Canonical URL.
-- Open Graph para Discord, LinkedIn, Facebook e outros previews.
-- Twitter Card.
-- JSON-LD `Organization`.
-- JSON-LD `WebSite`.
-- Ícones para favicon, Apple Touch Icon, Android/PWA e maskable icon.
+## Metadados
 
-## Antes de Publicar
+Cada página pública deve ter:
 
-O domínio público atual é `https://k0sec.pages.dev/`. Se um domínio próprio for adotado no futuro, atualize:
+- title específico;
+- meta description natural;
+- canonical absoluto em `https://k0sec.org`;
+- `og:title`, `og:description`, `og:url` e imagem social;
+- Twitter Card;
+- apenas um H1;
+- links internos reais.
 
-- `index.html`: `canonical`, `og:url`, `og:image`, `twitter:image` e JSON-LD.
-- `robots.txt`: URL do sitemap.
-- `sitemap.xml`: URL da página.
-- `manifest.webmanifest`: `start_url` e `scope`, se o site ficar em subpasta.
+A home possui JSON-LD `Organization` e `WebSite`. Páginas internas possuem `BreadcrumbList`. Schemas como `Article` e `Event` só devem ser usados quando houver artigo ou evento real com os dados obrigatórios confirmados.
 
-## Estratégia de Busca
+O projeto não utiliza `<meta name="keywords">`. Termos de busca devem aparecer organicamente no conteúdo e na hierarquia da informação.
 
-O site foi otimizado para buscas relacionadas a:
+## Sitemap e robots
 
-- Comunidade de cibersegurança.
-- Comunidade de segurança digital.
-- Cibersegurança para iniciantes.
-- Cibersegurança para estudantes.
-- Aprender segurança da informação.
-- Red Team, Blue Team, redes, Linux, OSINT, CTF e AppSec.
+`npm run build` gera `sitemap.xml` a partir das rotas existentes e das áreas cadastradas. O arquivo inclui somente URLs públicas, indexáveis e canônicas.
 
-O conteúdo evita prometer números, eventos ou resultados que a comunidade ainda não possui. Isso mantém consistência entre SEO, conteúdo visível e dados estruturados.
+`robots.txt` permite rastreamento e aponta para:
 
-## Limites Realistas
+```text
+https://k0sec.org/sitemap.xml
+```
 
-Nenhuma implementação técnica garante primeira posição no Google. Ranking depende de autoridade do domínio, links externos relevantes, qualidade do conteúdo, tempo de indexação, concorrência, comportamento dos usuários e histórico do site.
+A página `404.html` usa `noindex, follow` e não entra no sitemap.
 
-Para melhorar autoridade ao longo do tempo:
+## Checklist antes de publicar
 
-- Publicar roadmaps e materiais úteis no GitHub.
-- Criar páginas ou posts específicos para CTF, Linux, redes, OSINT, AppSec, Red Team e Blue Team.
-- Conseguir links naturais de parceiros, eventos, escolas, faculdades e comunidades.
-- Manter o Discord e Instagram apontando para o domínio oficial.
-- Manter os repositórios públicos da organização `k0sec-br` conectados ao site oficial.
-- Atualizar o sitemap quando novas páginas forem criadas.
-- Solicitar indexação no Google Search Console após o deploy.
+1. Execute `npm run validate` e `git diff --check`.
+2. Confirme que não há referência operacional a domínio de preview.
+3. Verifique canonical, Open Graph e JSON-LD em uma página de cada tipo.
+4. Abra o sitemap e confirme que todas as URLs respondem no ambiente publicado.
+5. Teste navegação e menu em desktop e mobile.
+6. Verifique o console e a navegação por teclado.
+7. Valide a imagem social, os favicons e o manifest.
 
-## Após Publicar
+## Indexação
 
-Recomendado cadastrar o site em:
+Após o deploy, envie `https://k0sec.org/sitemap.xml` ao Google Search Console e ao Bing Webmaster Tools. Use as ferramentas de inspeção para a home, `/areas/` e páginas prioritárias.
 
-- Google Search Console.
-- Bing Webmaster Tools.
-- Ferramentas de inspeção de compartilhamento das redes sociais.
+SEO técnico não garante posição. Autoridade depende de conteúdo útil, manutenção, links legítimos, clareza editorial e tempo de indexação. Evite páginas vazias, keyword stuffing, métricas inventadas e textos criados somente para aumentar o número de URLs.
 
-Também é recomendado testar:
+## Evolução editorial
 
-- Validação de HTML.
-- Lighthouse.
-- Rich Results Test.
-- Mobile-Friendly Test.
+Guias, eventos e projetos podem receber páginas detalhadas conforme conteúdo verdadeiro for publicado. Toda nova rota deve:
+
+- ser alcançável por links internos;
+- reutilizar o template visual;
+- ter metadados próprios;
+- entrar no sitemap gerado;
+- indicar autoria, data ou organizadores apenas quando confirmados;
+- não apresentar atividades planejadas como concluídas.
