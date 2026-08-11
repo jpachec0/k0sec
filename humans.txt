@@ -2,7 +2,7 @@ K0Sec
 
 Comunidade independente de cibersegurança e educação tecnológica.
 
-Site: https://k0sec.pages.dev/
+Site: https://k0sec.org/
 Discord: https://discord.gg/JSszTDPS7u
 Instagram: https://www.instagram.com/k0.sec
 GitHub: https://github.com/k0sec-br

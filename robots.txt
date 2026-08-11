@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://k0sec.pages.dev/sitemap.xml
+Sitemap: https://k0sec.org/sitemap.xml
