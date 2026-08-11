@@ -4,6 +4,7 @@
   const areaLayer = graphRoot?.querySelector("[data-home-area-layer]");
   const mobileList = graphRoot?.querySelector("[data-home-area-list]");
   const selectionSummary = graphRoot?.querySelector("[data-home-study-selection]");
+  const allAreasLink = graphRoot?.querySelector("[data-home-all-areas]");
   const siteData = window.K0SEC_SITE_DATA;
 
   if (!graphRoot || !graphCanvas || !areaLayer || !mobileList || !selectionSummary || !siteData?.areas) {
@@ -193,18 +194,33 @@
   function updateSelectionSummary(area) {
     selectionSummary.replaceChildren();
     selectionSummary.hidden = !area;
+    allAreasLink?.toggleAttribute("hidden", Boolean(area));
 
     if (!area) return;
 
-    const title = document.createElement("strong");
-    const description = document.createElement("span");
-    const link = document.createElement("a");
+    const copy = document.createElement("div");
+    const identifier = document.createElement("span");
+    const title = document.createElement("h3");
+    const description = document.createElement("p");
+    const actions = document.createElement("div");
+    const primaryLink = document.createElement("a");
+    const secondaryLink = document.createElement("a");
 
+    copy.className = "home-study-selection-copy";
+    identifier.className = "home-study-selection-id";
+    identifier.textContent = `${area.index} / ${area.code}`;
     title.textContent = area.title;
     description.textContent = area.description;
-    link.href = `/areas/${area.slug}/`;
-    link.textContent = `Abrir ${area.title} →`;
-    selectionSummary.append(title, description, link);
+    actions.className = "home-study-selection-actions";
+    primaryLink.className = "button button-primary";
+    primaryLink.href = `/areas/${area.slug}/`;
+    primaryLink.textContent = `Explorar ${area.title}`;
+    secondaryLink.className = "text-link";
+    secondaryLink.href = "/areas/";
+    secondaryLink.textContent = "Explorar todas as áreas →";
+    copy.append(identifier, title, description);
+    actions.append(primaryLink, secondaryLink);
+    selectionSummary.append(copy, actions);
   }
 
   function updateDesktopState() {
