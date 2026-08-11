@@ -2,15 +2,19 @@
   "name": "k0sec-site",
   "version": "1.0.0",
   "private": true,
-  "description": "Landing page oficial da comunidade K0Sec.",
+  "description": "Site institucional e educacional da comunidade K0Sec.",
   "scripts": {
+    "build": "node tools/generate-site.js",
+    "predev": "npm run build",
     "dev": "npx --yes http-server . -p 4173 -a 127.0.0.1",
-    "check:js": "node --check study-areas-data.js && node --check scripts.js && node --check tests/study-areas.test.js",
-    "check:html": "npx --yes html-validate index.html",
+    "check:js": "node --check site-data.js && node --check home-study-graph.js && node --check scripts.js && node --check tools/generate-site.js && node --check tools/validate-links.js && node --check tests/site-architecture.test.js",
+    "check:html": "find . -path './.git' -prune -o -path './BlogPessoal' -prune -o -path './node_modules' -prune -o -name '*.html' -print0 | xargs -0 npx --yes html-validate",
+    "check:links": "node tools/validate-links.js",
     "check:manifest": "node -e \"JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8'))\"",
     "check:sitemap": "xmllint --noout sitemap.xml",
-    "test": "node --test tests/study-areas.test.js",
-    "validate": "npm run check:js && npm test && npm run check:html && npm run check:manifest && npm run check:sitemap"
+    "lint": "npm run check:js && npm run check:html",
+    "test": "node --test tests/*.test.js",
+    "validate": "npm run build && npm run lint && npm test && npm run check:links && npm run check:manifest && npm run check:sitemap"
   },
   "keywords": [
     "k0sec",
