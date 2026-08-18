@@ -361,8 +361,9 @@ function renderHead({ title, description, path, schemas = [], indexable = true }
     <meta name="twitter:title" content="${escapeHtml(title)}">
     <meta name="twitter:description" content="${escapeHtml(description)}">
     <meta name="twitter:image" content="${SOCIAL_IMAGE_URL}">
-    <link rel="icon" href="/assets/k0sec-favicon.ico" sizes="32x32 48x48">
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
     <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-512.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="preload" href="/assets/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
